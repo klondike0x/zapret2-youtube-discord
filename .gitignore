@@ -1,0 +1,8 @@
+.hermes/
+dist/
+__pycache__/
+*.pyc
+profiles/dry-*.txt
+profiles/dry-custom-*.txt
+profiles/dry-author-*.txt
+tools/preset-active.txt

@@ -1,0 +1,12 @@
+# Общий список доменов. Поддомены учитываются автоматически.
+youtube.com
+youtu.be
+googlevideo.com
+ytimg.com
+youtubei.googleapis.com
+discord.com
+discord.gg
+discordapp.com
+discordapp.net
+discord.media
+discordcdn.com
