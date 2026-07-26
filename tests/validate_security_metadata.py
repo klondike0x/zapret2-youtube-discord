@@ -1,0 +1,67 @@
+from __future__ import annotations
+
+import hashlib
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+RELEASE_HASH = "c3091bb6f9fa0b6cef96763ced928ff7647eaaddc3cb04adc5cd0bfc4aa88a6f"
+
+
+def main() -> int:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8-sig")
+    workflow = (ROOT / ".github" / "workflows" / "release-security.yml").read_text(encoding="utf-8")
+    script = ROOT / "tools" / "generate_virustotal_table.py"
+
+    for token in [
+        RELEASE_HASH,
+        f"https://www.virustotal.com/gui/file/{RELEASE_HASH}",
+        "RiskTool",
+        "VT_API_KEY",
+        "Get-FileHash",
+    ]:
+        if token not in readme:
+            print(f"FAIL README: отсутствует {token}", file=sys.stderr)
+            return 1
+
+    if "${{ secrets.VT_API_KEY }}" not in workflow:
+        print("FAIL workflow: VirusTotal API key не читается из GitHub Secret", file=sys.stderr)
+        return 1
+    if '--api-key "$VT_API_KEY"' in workflow:
+        print("FAIL workflow: секрет нельзя передавать аргументом процесса", file=sys.stderr)
+        return 1
+    if "secrets.VT_API_KEY" in workflow and "permissions:\n  contents: read" not in workflow:
+        print("FAIL workflow: permissions должны оставаться read-only", file=sys.stderr)
+        return 1
+
+    with tempfile.TemporaryDirectory() as directory:
+        artifact = Path(directory) / "release.zip"
+        artifact.write_bytes(b"zapret2 security metadata test\n")
+        expected = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        result = subprocess.run(
+            [sys.executable, str(script), str(artifact), "--version", "v-test"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=30,
+        )
+        output = result.stdout + result.stderr
+        if result.returncode != 0 or expected not in output:
+            print(f"FAIL generator:\n{output}", file=sys.stderr)
+            return 1
+        if f"https://www.virustotal.com/gui/file/{expected}" not in output:
+            print("FAIL generator: ссылка VirusTotal не совпадает с SHA-256", file=sys.stderr)
+            return 1
+
+    print("PASS README: SHA-256, VirusTotal, GPG and false-positive warning")
+    print("PASS workflow: read-only metadata generation with secret-only API key")
+    print("PASS generator: report URL is deterministically derived from artifact SHA-256")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,50 @@
+name: Release security metadata
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to inspect
+        required: true
+        default: v1.0.0
+      asset:
+        description: Exact release asset name
+        required: true
+        default: zapret2-youtube-discord-v1.0.0.zip
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release-asset:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_ASSET: ${{ inputs.asset }}
+        run: |
+          mkdir -p dist
+          gh release download "$RELEASE_TAG" --pattern "$RELEASE_ASSET" --dir dist
+
+      - name: Generate SHA-256 and VirusTotal report link
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_ASSET: ${{ inputs.asset }}
+        run: |
+          python tools/generate_virustotal_table.py \
+            "dist/$RELEASE_ASSET" \
+            --version "$RELEASE_TAG" | tee VIRUSTOTAL.md
+          sha256sum "dist/$RELEASE_ASSET" | tee RELEASE_SHA256.txt
+
+      - name: Upload security metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-security-${{ inputs.tag }}
+          path: |
+            VIRUSTOTAL.md
+            RELEASE_SHA256.txt
