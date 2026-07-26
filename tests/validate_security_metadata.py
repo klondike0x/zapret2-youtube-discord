@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import subprocess
 import sys
 import tempfile
@@ -32,6 +33,9 @@ def main() -> int:
     if '--api-key "$VT_API_KEY"' in workflow:
         print("FAIL workflow: секрет нельзя передавать аргументом процесса", file=sys.stderr)
         return 1
+    if 'os.environ.get("VT_API_KEY")' not in script.read_text(encoding="utf-8"):
+        print("FAIL generator: VT_API_KEY из окружения не используется", file=sys.stderr)
+        return 1
     if "secrets.VT_API_KEY" in workflow and "permissions:\n  contents: read" not in workflow:
         print("FAIL workflow: permissions должны оставаться read-only", file=sys.stderr)
         return 1
@@ -55,6 +59,22 @@ def main() -> int:
             return 1
         if f"https://www.virustotal.com/gui/file/{expected}" not in output:
             print("FAIL generator: ссылка VirusTotal не совпадает с SHA-256", file=sys.stderr)
+            return 1
+
+        env = os.environ.copy()
+        env.pop("VT_API_KEY", None)
+        result = subprocess.run(
+            [sys.executable, str(script), str(artifact), "--version", "v-test"],
+            cwd=ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=30,
+        )
+        if "статистика не запрошена: VT_API_KEY не настроен" not in result.stdout:
+            print("FAIL generator: сообщение без API-ключа вводит в заблуждение", file=sys.stderr)
             return 1
 
     print("PASS README: SHA-256, VirusTotal, GPG and false-positive warning")

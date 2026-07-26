@@ -19,7 +19,7 @@ def sha256(path: Path) -> str:
 
 def vt_stats(file_hash: str, api_key: str | None) -> str:
     if not api_key:
-        return "отчёт создаётся после загрузки"
+        return "статистика не запрошена: VT_API_KEY не настроен"
     request = urllib.request.Request(
         f"https://www.virustotal.com/api/v3/files/{file_hash}",
         headers={"x-apikey": api_key},
