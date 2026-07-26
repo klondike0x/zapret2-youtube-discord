@@ -1,2 +1,2 @@
 @echo off
-call "%~dp0launcher.bat" "%~dp0profiles\general.txt"
+call "%~dp0launcher.bat" "profiles\general.txt"

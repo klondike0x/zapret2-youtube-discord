@@ -38,42 +38,18 @@ goto menu
 cls
 set "PROFILE="
 set "PROFILE_PATH="
-echo Выберите профиль:
-echo  1. General
-echo  2. General ALT (Flowseal port)
-echo  3. YouTube
-echo  4. Discord
-echo  5. Simple Fake
-echo  6. Multisplit
-echo  7. Fake + Multisplit
-echo  8. HostFakeSplit
-echo  9. Fake TLS Auto
-echo  0. Назад
-set /p "PROFILE_CHOICE=Профиль: "
-if "%PROFILE_CHOICE%"=="1" set "PROFILE=profiles\general.txt"
-if "%PROFILE_CHOICE%"=="2" set "PROFILE=profiles\general-alt.txt"
-if "%PROFILE_CHOICE%"=="3" set "PROFILE=profiles\youtube.txt"
-if "%PROFILE_CHOICE%"=="4" set "PROFILE=profiles\discord.txt"
-if "%PROFILE_CHOICE%"=="5" set "PROFILE=profiles\general-simple-fake.txt"
-if "%PROFILE_CHOICE%"=="6" set "PROFILE=profiles\general-multisplit.txt"
-if "%PROFILE_CHOICE%"=="7" set "PROFILE=profiles\general-fake-multisplit.txt"
-if "%PROFILE_CHOICE%"=="8" set "PROFILE=profiles\general-hostfakesplit.txt"
-if "%PROFILE_CHOICE%"=="9" set "PROFILE=profiles\general-fake-tls-auto.txt"
-
-if "%PROFILE_CHOICE%"=="0" goto menu
-if not defined PROFILE (
+echo Выберите Flowseal-подобный профиль Zapret2:
+call "%~dp0tools\list-profiles.bat"
+if errorlevel 1 (
   echo Неверный выбор.
   pause
   goto menu
 )
-set "PROFILE_PATH=%~dp0%PROFILE%"
-if not exist "%PROFILE_PATH%" (
-  echo Профиль не найден: %PROFILE_PATH%
-  pause
-  goto menu
+set "PROFILE_PATH=%SELECTED_PROFILE%"
+for %%F in ("%PROFILE_PATH%") do (
+  set "PROFILE_NAME=%%~nxF"
+  set "PROFILE=profiles\%%~nxF"
 )
-
-for %%F in ("%PROFILE_PATH%") do set "PROFILE_NAME=%%~nxF"
 set "SERVICE_PS1=%~dp0tools\run-service.ps1"
 call :remove_quiet
 sc create "%SERVICE%" binPath= "\"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe\" -NoProfile -ExecutionPolicy Bypass -File \"%SERVICE_PS1%\" -ProfilePath \"%PROFILE_PATH%\"" DisplayName= "zapret2 YouTube Discord" start= auto

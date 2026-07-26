@@ -60,16 +60,12 @@ python tools/generate_virustotal_table.py dist/<архив> --version vX.Y.Z
 ## 🚀 Быстрый запуск
 
 1. Распакуйте проект в обычный каталог с правом запуска программ.
-2. Запустите один из BAT-файлов:
-   - `general.bat` — основной общий профиль;
-   - `general (ALT).bat` — перенос стратегии `general (ALT)` из Flowseal на Zapret2;
-   - `general (YouTube).bat` — профиль для YouTube;
-   - `general (Discord).bat` — профиль для Discord.
-   - `general (SIMPLE FAKE).bat` — минимальная TCP-стратегия только с fake;
-   - `general (MULTISPLIT).bat` — TCP-сегментация с overlap без предварительного fake;
-   - `general (FAKE MULTISPLIT).bat` — усиленный вариант fake + multisplit;
-   - `general (HOSTFAKESPLIT).bat` — подмена только области имени хоста/SNI;
-   - `general (FAKE TLS AUTO).bat` — динамический TLS fake и multidisorder.
+2. Запустите один из Flowseal-подобных BAT-файлов. Для начала рекомендуются:
+   - `general.bat` — основной профиль;
+   - `general (ALT12).bat` — альтернативный профиль, рекомендованный в исходном наборе Player1545;
+   - `general (ALT2).bat` … `general (ALT14).bat` — варианты с разными механизмами Zapret2;
+   - `general (SIMPLE FAKE).bat` и три его ALT-варианта;
+   - `general (FAKE TLS AUTO).bat` и три его ALT-варианта.
 3. Подтвердите запрос UAC.
 4. `winws2` откроется в отдельном минимизированном окне. Разверните его через панель задач, если нужен журнал работы.
 
@@ -83,9 +79,13 @@ windivert initialized. capture is started.
 
 Если запуск завершится ошибкой, окно останется открытым и покажет код завершения.
 
-## ⚙️ Профиль General ALT
+## ⚙️ Flowseal-подобный каталог стратегий
 
-`general (ALT).bat` запускает `profiles/general-alt.txt`. Профиль сохраняет структуру исходной стратегии Flowseal, но использует синтаксис и Lua-функции Zapret2:
+Проект переносит 23 Flowseal-подобные стратегии из каталога Player1545: `general`, семейство `ALT` (`ALT`, `ALT2`–`ALT14`), четыре варианта `SIMPLE FAKE` и четыре варианта `FAKE TLS AUTO`. BAT-файлы остаются тонкими обёртками: каждый вызывает общий `launcher.bat`, а реальные параметры актуального Zapret2 находятся в отдельном `profiles/*.txt`. Дополнительные специализированные BAT для YouTube, Discord, Multisplit и HostFakeSplit сохранены отдельно.
+
+Стратегии перенесены с архитектуры Player1545, но не копируют его старый runtime: они запускаются нашим `winws2.exe` v1.0.3 (`lua_compat_ver 6`) и проверяются его реальным parser dry-run.
+
+`general (ALT).bat` запускает `profiles/general-alt.txt`. Профиль сохраняет структуру исходной стратегии, но использует синтаксис и Lua-функции Zapret2:
 
 - QUIC на UDP 443 по общим hostlist;
 - Discord Voice и STUN;
@@ -101,7 +101,7 @@ windivert initialized. capture is started.
 
 ## 🧪 Дополнительные стратегии
 
-Flowseal содержит много `ALT`, `SIMPLE FAKE` и `FAKE TLS AUTO` файлов. Большая часть различается только числом повторов, split-позицией или видом fooling. В этой сборке оставлены пять вариантов с действительно разной механикой:
+Каталог включает семейства `ALT`, `SIMPLE FAKE` и `FAKE TLS AUTO`. Они различаются числом повторов, split-позициями, payload-файлами и видом packet fooling:
 
 | BAT-файл | TCP-механика | Когда пробовать |
 | --- | --- | --- |
@@ -115,7 +115,7 @@ QUIC, Discord/STUN, списки и IP fallback во всех вариантах
 
 `FAKE TLS AUTO` использует `tls_mod=rnd,dupsid,sni=www.google.com`. Для HTTP применяется отдельный статический blob, поскольку TLS-модификаторы нельзя применять к произвольному HTTP payload.
 
-Не стоит переносить все Flowseal BAT-файлы один к одному. Варианты `ALT2`, `ALT6`, `ALT7` и часть `EXP` отличаются главным образом размером overlap или split-маркерами; их лучше подбирать после `blockcheck2`, а не хранить как десятки почти одинаковых профилей.
+Большое число файлов сохранено намеренно: пользовательский сценарий повторяет дух Flowseal — выбрать BAT и практически проверить стратегию у своего провайдера. Универсально лучшего варианта нет.
 
 ## 📋 Пользовательские списки
 
@@ -138,7 +138,7 @@ QUIC, Discord/STUN, списки и IP fallback во всех вариантах
 
 Откройте `service.bat` от имени администратора. Меню позволяет:
 
-- установить один из пяти пользовательских профилей как автоматическую службу;
+- динамически выбрать любой профиль `profiles/general*.txt` и установить его как автоматическую службу;
 - запустить или остановить службу;
 - проверить её статус и выбранный профиль;
 - удалить службу;
@@ -185,12 +185,15 @@ zapret2-youtube-discord/
 ```cmd
 bin\winws2.exe --version
 python tests\validate_project.py
+python tests\validate_flowseal_bat_catalog.py
 python tests\validate_flowseal_alt_port.py
 python tests\validate_strategy_variants.py
 python tests\dry_run_profiles.py
 ```
 
 `validate_project.py` проверяет состав проекта, BAT-launcher, службу и версию движка.
+
+`validate_flowseal_bat_catalog.py` проверяет полный набор из 23 перенесённых стратегий, соответствие BAT и TXT-профилей, CRLF, Lua-инициализацию и динамический каталог службы.
 
 `validate_flowseal_alt_port.py` проверяет портированный профиль General ALT, его зависимости, CRLF и параметры `tcp_ts`, затем запускает parser dry-run.
 
@@ -240,9 +243,10 @@ github version v1.0.3 (b78b52c4cd7f843da3ff0848a3430afbd401bdf2) lua_compat_ver 
 - [bol-van/zapret-win-bundle](https://github.com/bol-van/zapret-win-bundle)
 - [basil00/WinDivert](https://github.com/basil00/WinDivert)
 - [Flowseal/zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube) — идея простого выбора BAT-профилей
+- [Player1545/zapret-zapret2-by-player1545](https://github.com/Player1545/zapret-zapret2-by-player1545) — каталог Flowseal-подобных стратегий, адаптированный в этом проекте для актуального runtime Zapret2
 
-Этот проект не является официальной сборкой Flowseal. Стратегия General ALT была перенесена на архитектуру Zapret2 отдельно.
+Этот проект не является официальной сборкой Flowseal или Player1545. Стратегии Player1545 адаптированы для актуального движка и структуры этого проекта; исходные авторские права и условия лицензий сохранены в `NOTICE`.
 
 ## 📜 Лицензия
 
-Оболочка проекта распространяется по MIT License. Сторонние бинарники и библиотеки сохраняют собственные лицензии и авторские права.
+Собственная оболочка проекта распространяется по MIT License. Сторонние стратегии, бинарники и библиотеки сохраняют исходные лицензии и авторские права. Полная атрибуция Player1545, bol-van и WinDivert приведена в [`NOTICE`](NOTICE).

@@ -1,0 +1,39 @@
+# Third-party notices
+
+This project contains and adapts components from several open-source projects. The project’s own wrapper code is licensed under the repository’s `LICENSE`; third-party components remain under their original licenses.
+
+## Player1545 — zapret-zapret2-by-player1545
+
+The Flowseal-style strategy catalog in `general*.bat` / `profiles/general*.txt` was ported and adapted from:
+
+- https://github.com/Player1545/zapret-zapret2-by-player1545
+
+Original copyright notices:
+
+```text
+Copyright (c) 2016-2026 bol-van
+Copyright (c) 2025-2026 Player1545
+```
+
+The source project is distributed under the MIT License. Its license permits use, copying, modification, merging, publication and distribution, provided that the copyright and permission notices are retained.
+
+## bol-van — zapret2 and zapret-win-bundle
+
+The `winws2.exe` engine, Lua runtime files and associated payloads originate from bol-van projects:
+
+- https://github.com/bol-van/zapret2
+- https://github.com/bol-van/zapret-win-bundle
+
+Copyright (c) 2016-2026 bol-van. Distributed under the applicable upstream MIT license and notices.
+
+## WinDivert
+
+WinDivert binaries originate from:
+
+- https://github.com/basil00/WinDivert
+
+WinDivert is distributed under the upstream dual-license terms: LGPLv3 or GPLv2. See the upstream project for source code and complete license text.
+
+## Attribution scope
+
+Attribution does not imply endorsement by Flowseal, Player1545, bol-van or the WinDivert authors. This repository is an independently maintained portable integration and is not an official release of those projects.

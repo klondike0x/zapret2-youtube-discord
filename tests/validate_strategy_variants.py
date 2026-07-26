@@ -30,8 +30,8 @@ VARIANTS = {
     "general (FAKE TLS AUTO).bat": (
         "general-fake-tls-auto.txt",
         [
-            "--lua-desync=fake:blob=fake_default_tls:repeats=8:tcp_seq=10000000:tls_mod=rnd,dupsid,sni=www.google.com",
-            "--lua-desync=multidisorder:pos=1,midsld",
+            "--lua-desync=fake:blob=fake_default_tls:tls_mod=rnd,dupsid,sni=www.google.com:tcp_ack=-66000:repeats=11",
+            "--lua-desync=multidisorder:pos=1,midsld:tcp_ack=-66000:repeats=11",
         ],
     ),
 }
@@ -57,8 +57,8 @@ def main() -> int:
         launcher_text = launcher.read_text(encoding="utf-8-sig")
         if f"profiles\\{profile_name}" not in launcher_text:
             return fail(f"{launcher_name} не указывает на {profile_name}")
-        if f"profiles\\{profile_name}" not in service:
-            return fail(f"{profile_name} отсутствует в service.bat")
+        if "tools\\list-profiles.bat" not in service or "profiles\\general*.txt" not in (ROOT / "tools" / "list-profiles.bat").read_text(encoding="utf-8-sig"):
+            return fail(f"{profile_name} не охвачен динамическим каталогом service.bat")
         if f"`{launcher_name}`" not in readme:
             return fail(f"{launcher_name} не описан в README")
 

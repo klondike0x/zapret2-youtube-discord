@@ -1,2 +1,2 @@
 @echo off
-call "%~dp0launcher.bat" "%~dp0profiles\general-fake-tls-auto.txt"
+call "%~dp0launcher.bat" "profiles\general-fake-tls-auto.txt"
