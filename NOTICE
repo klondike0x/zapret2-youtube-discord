@@ -15,7 +15,7 @@ Copyright (c) 2016-2026 bol-van
 Copyright (c) 2025-2026 Player1545
 ```
 
-The source project is distributed under the MIT License. Its license permits use, copying, modification, merging, publication and distribution, provided that the copyright and permission notices are retained.
+The source project is distributed under the MIT License. Its complete copyright, permission and warranty notice is retained verbatim in `LICENSES/Player1545-MIT.txt`.
 
 ## bol-van — zapret2 and zapret-win-bundle
 
@@ -32,7 +32,7 @@ WinDivert binaries originate from:
 
 - https://github.com/basil00/WinDivert
 
-WinDivert is distributed under the upstream dual-license terms: LGPLv3 or GPLv2. See the upstream project for source code and complete license text.
+WinDivert is distributed under the upstream dual-license terms: LGPLv3 or GPLv2. The complete upstream license bundle (LGPLv3, GPLv3 and GPLv2) is included in `LICENSES/WinDivert.txt`; source code is available from the upstream project.
 
 ## Attribution scope
 
