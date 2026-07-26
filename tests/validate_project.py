@@ -67,8 +67,10 @@ def validate_launchers() -> None:
         fail("launcher.bat не запускает winws2.exe")
     if 'cd /d "%~dp0"' not in launcher:
         fail("launcher.bat не сохраняет корень bundle как рабочий каталог")
-    if not re.search(r'^start\s+"zapret2: %PROFILE_TITLE%"\s+/min\s+cmd\.exe\s+/d\s+/k\s+call\s+tools\\run-window\.bat', launcher, re.I | re.M):
-        fail("launcher.bat не запускает отдельное минимизированное CMD-окно в стиле Zapret1")
+    if not re.search(r'^start\s+"zapret2: %PROFILE_TITLE%"\s+/min\s+bin\\winws2\.exe\s+@tools/preset-active\.txt', launcher, re.I | re.M):
+        fail("launcher.bat не запускает winws2.exe напрямую через проверенный относительный путь")
+    if "cmd.exe /d /k call tools\\run-window.bat" in launcher:
+        fail("launcher.bat всё ещё оставляет cmd.exe владельцем кнопки панели задач")
     if 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0run-window.ps1"' not in window_runner:
         fail("run-window.bat не использует PowerShell-мост для Cygwin @config")
     if '& $exe "@tools/preset-active.txt"' not in window_runner_ps1:

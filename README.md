@@ -62,10 +62,11 @@ python tools/generate_virustotal_table.py dist/<архив> --version vX.Y.Z
 1. Распакуйте проект в обычный каталог с правом запуска программ.
 2. Запустите один из Flowseal-подобных BAT-файлов. Для начала рекомендуются:
    - `general.bat` — основной профиль;
-   - `general (ALT12).bat` — альтернативный профиль, рекомендованный в исходном наборе Player1545;
-   - `general (ALT2).bat` … `general (ALT14).bat` — варианты с разными механизмами Zapret2;
+   - `general (ALT).bat` — базовая адаптация расширенной стратегии Player1545;
+   - `general (ALT2).bat` … `general (ALT14).bat` — четырнадцать альтернативных сочетаний `fake`, split- и Lua-механик;
    - `general (SIMPLE FAKE).bat` и три его ALT-варианта;
-   - `general (FAKE TLS AUTO).bat` и три его ALT-варианта.
+   - `general (FAKE TLS AUTO).bat` и три его ALT-варианта;
+   - дополнительные профили `MULTISPLIT`, `FAKE MULTISPLIT`, `HOSTFAKESPLIT`, `YouTube` и `Discord`.
 3. Подтвердите запрос UAC.
 4. `winws2` откроется в отдельном минимизированном окне. Разверните его через панель задач, если нужен журнал работы.
 
@@ -81,11 +82,24 @@ windivert initialized. capture is started.
 
 ## ⚙️ Flowseal-подобный каталог стратегий
 
-Проект переносит 23 Flowseal-подобные стратегии из каталога Player1545: `general`, семейство `ALT` (`ALT`, `ALT2`–`ALT14`), четыре варианта `SIMPLE FAKE` и четыре варианта `FAKE TLS AUTO`. BAT-файлы остаются тонкими обёртками: каждый вызывает общий `launcher.bat`, а реальные параметры актуального Zapret2 находятся в отдельном `profiles/*.txt`. Дополнительные специализированные BAT для YouTube, Discord, Multisplit и HostFakeSplit сохранены отдельно.
+В корне проекта сейчас находятся **28 отдельных BAT-файлов**. Из них **23** образуют адаптированный каталог Player1545: `general`, семейство `ALT` (`ALT`, `ALT2`–`ALT14`), четыре варианта `SIMPLE FAKE` и четыре варианта `FAKE TLS AUTO`. Ещё пять BAT дают отдельные профили `YouTube`, `Discord`, `MULTISPLIT`, `FAKE MULTISPLIT` и `HOSTFAKESPLIT`.
+
+BAT-файлы являются тонкими обёртками: каждый передаёт общему `launcher.bat` свой файл из `profiles/`. Launcher запрашивает права администратора, копирует выбранную конфигурацию в короткое runtime-имя `tools/preset-active.txt` и запускает актуальный `bin/winws2.exe`. Параметры обхода находятся не в BAT, а в соответствующем TXT-профиле.
 
 Стратегии перенесены с архитектуры Player1545, но не копируют его старый runtime: они запускаются нашим `winws2.exe` v1.0.3 (`lua_compat_ver 6`) и проверяются его реальным parser dry-run.
 
-`general (ALT).bat` запускает `profiles/general-alt.txt`. Профиль сохраняет структуру исходной стратегии, но использует синтаксис и Lua-функции Zapret2:
+### Текущий каталог BAT
+
+| Семейство | BAT-файлы | Профили | Назначение |
+| --- | --- | --- | --- |
+| Основной | `general.bat` | `profiles/general.txt` | Базовый универсальный вариант с `fake` и `multisplit` |
+| ALT | `general (ALT).bat`, `general (ALT2).bat` … `general (ALT14).bat` | `profiles/general-alt*.txt` | 15 вариантов Player1545 с разными комбинациями `fake`, `multisplit`, `hostfakesplit`, `multidisorder` и других Lua-функций |
+| SIMPLE FAKE | `general (SIMPLE FAKE).bat`, `... ALT`, `... ALT2`, `... ALT3` | `profiles/general-simple-fake*.txt` | Четыре сравнительно простых варианта, основанных преимущественно на fake-пакетах |
+| FAKE TLS AUTO | `general (FAKE TLS AUTO).bat`, `... ALT`, `... ALT2`, `... ALT3` | `profiles/general-fake-tls-auto*.txt` | Четыре варианта с динамически модифицируемым TLS fake и разными split-механиками |
+| Отдельные механики | `general (MULTISPLIT).bat`, `general (FAKE MULTISPLIT).bat`, `general (HOSTFAKESPLIT).bat` | одноимённые `profiles/general-*.txt` | Явный выбор конкретной TCP/TLS-механики |
+| Специализированные | `general (YouTube).bat`, `general (Discord).bat` | `profiles/youtube.txt`, `profiles/discord.txt` | Компактные профили для отдельной проверки YouTube или Discord |
+
+`general (ALT).bat` запускает `profiles/general-alt.txt`. Этот профиль сохраняет структуру исходной стратегии, но использует синтаксис и Lua-функции актуального Zapret2:
 
 - QUIC на UDP 443 по общим hostlist;
 - Discord Voice и STUN;
@@ -99,9 +113,9 @@ windivert initialized. capture is started.
 
 Игровые порты в текущей версии профиля отключены безопасным портом-заглушкой `12`. Это соответствует выключенному Game Filter в исходном Flowseal. Для включения игрового диапазона профиль нужно отредактировать осознанно.
 
-## 🧪 Дополнительные стратегии
+## 🧪 Чем различаются стратегии
 
-Каталог включает семейства `ALT`, `SIMPLE FAKE` и `FAKE TLS AUTO`. Они различаются числом повторов, split-позициями, payload-файлами и видом packet fooling:
+Каталог не является списком копий одной команды. Профили различаются числом повторов, split-позициями, payload-файлами, диапазонами трафика и набором Lua-действий. Краткие ориентиры:
 
 | BAT-файл | TCP-механика | Когда пробовать |
 | --- | --- | --- |
@@ -110,6 +124,8 @@ windivert initialized. capture is started.
 | `general (FAKE MULTISPLIT).bat` | `fake` + `multisplit` | Более агрессивный вариант для сложного DPI |
 | `general (HOSTFAKESPLIT).bat` | `hostfakesplit` | Когда DPI принимает решение по HTTP Host или TLS SNI |
 | `general (FAKE TLS AUTO).bat` | динамический TLS fake + `multidisorder` | Для TLS-фильтрации, где полезна рандомизация ClientHello |
+| `general (YouTube).bat` | отдельный профиль для YouTube | Для узкой проверки видеосервисов без полного каталога General |
+| `general (Discord).bat` | отдельный профиль Discord/STUN | Для узкой проверки Discord, включая голосовой UDP |
 
 QUIC, Discord/STUN, списки и IP fallback во всех вариантах сохранены от основного General ALT. Игровые профили остаются отключены портом `12`.
 
@@ -178,7 +194,7 @@ zapret2-youtube-discord/
 - `--filter-*`, `--payload`, `--hostlist` и `--ipset` выбирают трафик;
 - `--new` начинает следующий профиль обработки.
 
-`launcher.bat` копирует выбранную конфигурацию в `tools/preset-active.txt`, после чего запускает её через отдельное минимизированное CMD-окно. PowerShell-мост нужен из-за особенностей передачи `@config` в Cygwin-сборку `winws2.exe`.
+`launcher.bat` копирует выбранную конфигурацию в `tools/preset-active.txt`, затем из корня проекта запускает `bin\winws2.exe @tools/preset-active.txt` в отдельном минимизированном окне. Короткое относительное имя runtime-профиля необходимо из-за чувствительности Cygwin-парсера `@config` к пробелам, кодировке пути и формату строк.
 
 ## ✅ Проверка проекта
 
@@ -199,7 +215,7 @@ python tests\dry_run_profiles.py
 
 `validate_flowseal_alt_port.py` проверяет портированный профиль General ALT, его зависимости, CRLF и параметры `tcp_ts`, затем запускает parser dry-run.
 
-`validate_strategy_variants.py` проверяет пять дополнительных стратегий, их BAT-файлы, регистрацию в службе и реальный parser dry-run.
+`validate_strategy_variants.py` проверяет характерные параметры пяти отдельных механик, их BAT-файлы, охват динамическим каталогом службы и реальный parser dry-run.
 
 `dry_run_profiles.py` создаёт временную копию каждого профиля с `--dry-run` внутри конфигурации и передаёт её реальному `winws2.exe`. Этот тест проверяет синтаксис, загрузку файлов и Lua-инициализацию, но не подтверждает работу обхода у конкретного провайдера.
 
@@ -229,7 +245,7 @@ github version v1.0.3 (b78b52c4cd7f843da3ff0848a3430afbd401bdf2) lua_compat_ver 
 
 ### ❌ Ошибка `failed to split command line options`
 
-Не запускайте `winws2.exe` вручную с абсолютным `@config`. Используйте готовые BAT-файлы. Профили должны сохранять CRLF и передаваться через предусмотренный PowerShell-мост.
+Не запускайте `winws2.exe` вручную с абсолютным путём к `@config`. Используйте готовые BAT-файлы: launcher создаёт короткий `tools/preset-active.txt`, сохраняющий обязательные CRLF, и запускает его из правильного рабочего каталога.
 
 ### ❌ Ошибка Lua о `tcp_ts`
 

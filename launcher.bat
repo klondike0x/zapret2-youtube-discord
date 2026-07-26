@@ -44,7 +44,7 @@ if errorlevel 1 (
 )
 
 cd /d "%~dp0"
-start "zapret2: %PROFILE_TITLE%" /min cmd.exe /d /k call tools\run-window.bat
+start "zapret2: %PROFILE_TITLE%" /min bin\winws2.exe @tools/preset-active.txt
 if errorlevel 1 (
   echo Не удалось запустить winws2.exe.
   pause
