@@ -39,6 +39,10 @@ def main() -> int:
     if "secrets.VT_API_KEY" in workflow and "permissions:\n  contents: read" not in workflow:
         print("FAIL workflow: permissions должны оставаться read-only", file=sys.stderr)
         return 1
+    for token in ["zipfile.ZipFile", "release asset has .zip extension but is not a ZIP archive", "testzip"]:
+        if token not in workflow:
+            print(f"FAIL workflow: отсутствует проверка ZIP: {token}", file=sys.stderr)
+            return 1
 
     with tempfile.TemporaryDirectory() as directory:
         artifact = Path(directory) / "release.zip"

@@ -57,6 +57,9 @@ python tools/generate_virustotal_table.py dist/<архив> --version vX.Y.Z
 
 При наличии секрета `VT_API_KEY` workflow `.github/workflows/release-security.yml` дополнительно читает статистику существующего отчёта. Ключ VirusTotal никогда не должен храниться в репозитории — только в GitHub Actions Secrets.
 
+> [!IMPORTANT]
+> Архив `zapret2-youtube-discord-v1.0.0.zip` был ошибочно создан в формате TAR при расширении `.zip`. Для Windows используйте исправленный релиз `v1.0.1` или новее. Начиная с `v1.0.1`, формат и целостность ZIP проверяются автоматически перед публикацией.
+
 ## 🚀 Быстрый запуск
 
 1. Распакуйте проект в обычный каталог с правом запуска программ.

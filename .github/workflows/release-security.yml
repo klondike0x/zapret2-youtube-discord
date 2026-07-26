@@ -41,6 +41,27 @@ jobs:
             --version "$RELEASE_TAG" | tee VIRUSTOTAL.md
           sha256sum "dist/$RELEASE_ASSET" | tee RELEASE_SHA256.txt
 
+      - name: Verify portable ZIP format and integrity
+        env:
+          RELEASE_ASSET: ${{ inputs.asset }}
+        run: |
+          python - "$RELEASE_ASSET" <<'PY'
+          import sys
+          import zipfile
+          from pathlib import Path
+
+          asset = Path("dist") / sys.argv[1]
+          if asset.suffix.lower() != ".zip":
+              raise SystemExit(f"expected a .zip release asset, got {asset.name}")
+          if asset.read_bytes()[:4] != b"PK\x03\x04":
+              raise SystemExit("release asset has .zip extension but is not a ZIP archive")
+          with zipfile.ZipFile(asset, "r") as bundle:
+              bad_entry = bundle.testzip()
+              if bad_entry:
+                  raise SystemExit(f"ZIP integrity check failed at {bad_entry}")
+              print(f"ZIP verified: {len(bundle.namelist())} files")
+          PY
+
       - name: Upload security metadata
         uses: actions/upload-artifact@v4
         with:
