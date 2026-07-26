@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +51,31 @@ def main() -> int:
     selector = (ROOT / "tools" / "list-profiles.bat").read_text(encoding="utf-8-sig")
     if "tools\\list-profiles.bat" not in service.lower() or "profiles\\general*.txt" not in selector.lower():
         errors.append("service.bat: каталог профилей должен формироваться динамически")
+
+    with tempfile.TemporaryDirectory(prefix="zapret2-profile-probe-") as temp_dir:
+        probe_dir = Path(temp_dir)
+        choice = probe_dir / "choice.txt"
+        probe = probe_dir / "probe.bat"
+        choice.write_text("1\n", encoding="ascii")
+        probe.write_text(
+            "@echo off\n"
+            f'call "{ROOT / "tools" / "list-profiles.bat"}" < "{choice}" >nul\n'
+            "echo RC=%errorlevel%\n"
+            "echo SELECTED=%SELECTED_PROFILE%\n",
+            encoding="utf-8",
+        )
+        selector_probe = subprocess.run(
+            ["cmd.exe", "/d", "/c", str(probe)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=30,
+        )
+    output = selector_probe.stdout + selector_probe.stderr
+    if selector_probe.returncode != 0 or "RC=0" not in output or "profiles\\general-alt.txt" not in output.lower():
+        errors.append(f"tools/list-profiles.bat: выбранный профиль не экспортируется после endlocal: {output.strip()}")
 
     if errors:
         print("FAIL flowseal BAT catalog:", file=sys.stderr)

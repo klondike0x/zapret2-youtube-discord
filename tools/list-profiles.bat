@@ -11,5 +11,6 @@ set /p "PROFILE_CHOICE=Профиль: "
 for /f "delims=0123456789" %%A in ("!PROFILE_CHOICE!") do exit /b 2
 if !PROFILE_CHOICE! LSS 1 exit /b 2
 if !PROFILE_CHOICE! GTR !INDEX! exit /b 2
-for %%N in (!PROFILE_CHOICE!) do endlocal & set "SELECTED_PROFILE=%PROFILE_%%N%"
+for %%N in (!PROFILE_CHOICE!) do set "SELECTED_PROFILE=!PROFILE_%%N!"
+for %%F in ("!SELECTED_PROFILE!") do endlocal & set "SELECTED_PROFILE=%%~fF"
 exit /b 0
