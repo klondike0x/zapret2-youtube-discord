@@ -28,8 +28,9 @@ def git_file(root: Path, revision: str, name: str) -> bytes:
 
 
 def windows_release_data(name: str, data: bytes) -> bytes:
-    if name.lower().endswith((".bat", ".cmd")):
-        return data.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    is_profile = name.startswith("profiles/") and name.lower().endswith(".txt")
+    if name.lower().endswith((".bat", ".cmd")) or is_profile:
+        return data.replace(bytes((13, 10)), bytes((10,))).replace(bytes((10,)), bytes((13, 10)))
     return data
 
 

@@ -51,6 +51,10 @@ def main() -> int:
                     raw = bundle.read(name)
                     if b"\x0a" in raw.replace(b"\x0d\x0a", b""):
                         return fail(f"Windows command script uses LF instead of CRLF: {name}")
+                if "/profiles/" in name and name.lower().endswith(".txt"):
+                    raw = bundle.read(name)
+                    if b"\x0a" in raw.replace(b"\x0d\x0a", b""):
+                        return fail(f"Zapret2 profile uses LF instead of CRLF: {name}")
         prefix = f"zapret2-youtube-discord-{VERSION}/"
         if not names or any(not name.startswith(prefix) for name in names):
             return fail("ZIP entries do not use one versioned top-level directory")
