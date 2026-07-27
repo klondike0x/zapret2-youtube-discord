@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_HASH = "c3091bb6f9fa0b6cef96763ced928ff7647eaaddc3cb04adc5cd0bfc4aa88a6f"
+RELEASE_HASH = "81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1"
 
 
 def main() -> int:
@@ -18,7 +18,7 @@ def main() -> int:
 
     for token in [
         RELEASE_HASH,
-        f"https://www.virustotal.com/gui/file/{RELEASE_HASH}",
+        "Ссылка будет опубликована только после завершённого анализа",
         "RiskTool",
         "VT_API_KEY",
         "Get-FileHash",

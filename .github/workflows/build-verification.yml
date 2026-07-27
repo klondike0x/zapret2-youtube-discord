@@ -1,0 +1,86 @@
+name: Build verification
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Validate project
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run maintained validators
+        shell: cmd
+        run: |
+          python tests\validate_project.py
+          python tests\validate_flowseal_alt_port.py
+          python tests\validate_strategy_variants.py
+          python tests\validate_release_zip.py
+          python tests\validate_security_metadata.py
+          python tests\validate_trust_docs.py
+
+  build-zip:
+    name: Build genuine ZIP
+    runs-on: windows-latest
+    needs: test
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Select artifact version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $version = "${{ github.ref_name }}"
+          } else {
+            $shortSha = "${{ github.sha }}".Substring(0, 12)
+            $version = "build-$shortSha"
+          }
+          "value=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build and verify portable ZIP
+        shell: pwsh
+        run: |
+          python tools/build_release_zip.py --version "${{ steps.version.outputs.value }}" --revision "${{ github.sha }}" --output-dir dist
+          python -c "from pathlib import Path; import zipfile; p=next(Path('dist').glob('*.zip')); assert p.read_bytes()[:4] == b'PK\x03\x04'; z=zipfile.ZipFile(p); assert z.testzip() is None; print(f'ZIP verified: {p.name}, {len(z.namelist())} files')"
+          Get-FileHash dist\*.zip -Algorithm SHA256 | Format-List
+
+      - name: Upload portable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-zip-${{ steps.version.outputs.value }}
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Attest build provenance
+        if: github.event_name != 'pull_request' && github.repository_visibility == 'public'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: dist/*.zip

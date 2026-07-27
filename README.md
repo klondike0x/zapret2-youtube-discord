@@ -1,5 +1,12 @@
 # zapret2-youtube-discord
 
+Русский | [English](README.en.md)
+
+[![Релиз](https://img.shields.io/github/v/release/klondike0x/zapret2-youtube-discord?label=release)](https://github.com/klondike0x/zapret2-youtube-discord/releases/latest)
+[![Загрузки](https://img.shields.io/github/downloads/klondike0x/zapret2-youtube-discord/total?label=downloads)](https://github.com/klondike0x/zapret2-youtube-discord/releases)
+[![Проверка сборки](https://github.com/klondike0x/zapret2-youtube-discord/actions/workflows/build-verification.yml/badge.svg)](https://github.com/klondike0x/zapret2-youtube-discord/actions/workflows/build-verification.yml)
+[![Лицензия](https://img.shields.io/github/license/klondike0x/zapret2-youtube-discord)](LICENSE)
+
 Portable-набор для Windows с готовыми BAT-профилями на базе настоящего Zapret2. Внутри используется официальный `winws2.exe` и Lua-стратегии Zapret2, а не `winws.exe` от Zapret1.
 
 [Скачать последнюю версию](https://github.com/klondike0x/zapret2-youtube-discord/releases/latest)
@@ -23,16 +30,14 @@ GPG fingerprint релизов: `4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31
 
 Каждый отчёт VirusTotal относится **только к конкретному файлу с конкретным SHA-256**. Если архив был пересобран или изменён хотя бы на один байт, старый отчёт к нему больше не относится.
 
-[![VirusTotal](https://img.shields.io/badge/VirusTotal-проверить_релиз-394EFF?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/c3091bb6f9fa0b6cef96763ced928ff7647eaaddc3cb04adc5cd0bfc4aa88a6f)
-
 | Версия | Файл | SHA-256 | VirusTotal |
 | --- | --- | --- | --- |
-| v1.0.0 | `zapret2-youtube-discord-v1.0.0.zip` | `c3091bb6f9fa0b6cef96763ced928ff7647eaaddc3cb04adc5cd0bfc4aa88a6f` | [Открыть отчёт по SHA-256](https://www.virustotal.com/gui/file/c3091bb6f9fa0b6cef96763ced928ff7647eaaddc3cb04adc5cd0bfc4aa88a6f) |
+| v1.0.1 | `zapret2-youtube-discord-v1.0.1.zip` | `81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1` | Ссылка будет опубликована только после завершённого анализа файла с тем же SHA-256 |
 
 SHA-256 выше получен непосредственно из метаданных GitHub Release asset. Перед запуском рекомендуется сравнить хеш скачанного архива:
 
 ```powershell
-Get-FileHash .\zapret2-youtube-discord-v1.0.0.zip -Algorithm SHA256
+Get-FileHash .\zapret2-youtube-discord-v1.0.1.zip -Algorithm SHA256
 ```
 
 Проверка GPG-подписи опубликованного манифеста:
@@ -56,6 +61,17 @@ python tools/generate_virustotal_table.py dist/<архив> --version vX.Y.Z
 ```
 
 При наличии секрета `VT_API_KEY` workflow `.github/workflows/release-security.yml` дополнительно читает статистику существующего отчёта. Ключ VirusTotal никогда не должен храниться в репозитории — только в GitHub Actions Secrets.
+
+## 🔍 Воспроизводимая сборка и provenance
+
+Portable ZIP собирается из файлов конкретного Git-коммита, а не из произвольного содержимого рабочей папки:
+
+```bash
+python tools/build_release_zip.py --version v1.0.1 --revision v1.0.1 --output-dir dist
+python tests/validate_release_zip.py
+```
+
+Workflow `Build verification` запускает проверки, собирает настоящий ZIP и для запусков в публичном репозитории вне pull request публикует GitHub artifact attestation. Attestation связывает полученный архив с репозиторием, workflow и коммитом. Она дополняет, но не заменяет подписанные `SHA256SUMS.txt` и `SHA256SUMS.txt.asc` в официальном релизе.
 
 > [!IMPORTANT]
 > Архив `zapret2-youtube-discord-v1.0.0.zip` был ошибочно создан в формате TAR при расширении `.zip`. Для Windows используйте исправленный релиз `v1.0.1` или новее. Начиная с `v1.0.1`, формат и целостность ZIP проверяются автоматически перед публикацией.
@@ -245,6 +261,8 @@ github version v1.0.3 (b78b52c4cd7f843da3ff0848a3430afbd401bdf2) lua_compat_ver 
 - [Flowseal/zapret-discord-youtube](https://github.com/Flowseal/zapret-discord-youtube) — идея простого выбора BAT-профилей
 
 Этот проект не является официальной сборкой Flowseal. Стратегия General ALT была перенесена на архитектуру Zapret2 отдельно.
+
+Сообщить об уязвимости можно по правилам из [`SECURITY.md`](SECURITY.md). Требования к pull request и новым профилям описаны в [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## 📜 Лицензия
 

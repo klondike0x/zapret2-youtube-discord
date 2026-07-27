@@ -6,11 +6,11 @@ on:
       tag:
         description: Existing release tag to inspect
         required: true
-        default: v1.0.0
+        default: v1.0.1
       asset:
         description: Exact release asset name
         required: true
-        default: zapret2-youtube-discord-v1.0.0.zip
+        default: zapret2-youtube-discord-v1.0.1.zip
 
 permissions:
   contents: read
