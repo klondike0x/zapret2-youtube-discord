@@ -6,3 +6,7 @@ profiles/dry-*.txt
 profiles/dry-custom-*.txt
 profiles/dry-author-*.txt
 tools/preset-active.txt
+tools/service-active.txt
+tools/service-next.txt
+tools/strategy-test-active.txt
+tools/test results/

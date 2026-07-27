@@ -93,7 +93,18 @@ def validate_launchers() -> None:
 
 def validate_service() -> None:
     text = (ROOT / "service.bat").read_text(encoding="utf-8-sig")
-    for token in ["winws2.exe", "taskkill /IM winws2.exe", "sc create", "sc delete", "PROFILE_PATH", "SERVICE_PS1", "run-service.ps1"]:
+    for token in [
+        "winws2.exe",
+        "stop-manual-winws2.ps1",
+        "sc create",
+        "sc start",
+        "sc stop",
+        "sc delete",
+        "PROFILE_PATH",
+        "prepare-service-profile.ps1",
+        "test-strategies.ps1",
+        'set "SERVICE=winws2"',
+    ]:
         if token.lower() not in text.lower():
             fail(f"service.bat: отсутствует {token}")
     if "@$PROFILE" in text:
