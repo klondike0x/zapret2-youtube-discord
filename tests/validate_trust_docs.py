@@ -25,9 +25,9 @@ def main() -> int:
         "actions/workflows/build-verification.yml/badge.svg",
         "github/v/release/klondike0x/zapret2-youtube-discord",
         "github/downloads/klondike0x/zapret2-youtube-discord/total",
-        "81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1",
-        "https://www.virustotal.com/gui/file/81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1",
-        "v1.0.1",
+        "8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652",
+        "https://www.virustotal.com/gui/file/8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652",
+        "v1.0.2",
     ]:
         require(readme, token, "README.md")
     if "c3091bb6f9fa0b6cef96763ced928ff7647eaaddc3cb04adc5cd0bfc4aa88a6f" in readme:
@@ -36,7 +36,7 @@ def main() -> int:
     for token in [
         "README.md",
         "winws2.exe v1.0.3",
-        "v1.0.1",
+        "v1.0.2",
         "4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31AE",
         "VirusTotal",
         "NOTICE",

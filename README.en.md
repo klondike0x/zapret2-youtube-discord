@@ -48,16 +48,16 @@ The current release includes general, General ALT, YouTube, Discord, Simple Fake
 
 ## Release verification
 
-The corrected `v1.0.1` Windows asset is a genuine ZIP archive:
+The corrected `v1.0.2` Windows asset is a genuine ZIP archive with Windows CRLF line endings for BAT/CMD files and Zapret2 profiles:
 
 | Version | Asset | SHA-256 | VirusTotal |
 | --- | --- | --- | --- |
-| v1.0.1 | `zapret2-youtube-discord-v1.0.1.zip` | `81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1` | [Open report](https://www.virustotal.com/gui/file/81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1) |
+| v1.0.2 | `zapret2-youtube-discord-v1.0.2.zip` | `8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652` | [Open report](https://www.virustotal.com/gui/file/8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652) |
 
 Check the downloaded file in PowerShell:
 
 ```powershell
-Get-FileHash .\zapret2-youtube-discord-v1.0.1.zip -Algorithm SHA256
+Get-FileHash .\zapret2-youtube-discord-v1.0.2.zip -Algorithm SHA256
 ```
 
 Verify the signed checksum manifest:
@@ -70,14 +70,14 @@ sha256sum -c SHA256SUMS.txt
 
 GPG proves origin and integrity, not that software is harmless. A VirusTotal report is an additional signal tied to one exact SHA-256, not an antivirus guarantee.
 
-The `v1.0.0` asset was mistakenly packaged as TAR under a `.zip` extension and has been superseded by `v1.0.1`.
+The `v1.0.0` asset was mistakenly packaged as TAR under a `.zip` extension. The `v1.0.1` ZIP contained LF line endings in Windows scripts and profiles. Both have been superseded by `v1.0.2`.
 
 ## Reproducing the ZIP
 
 The release ZIP builder exports tracked files from a Git revision and writes a deterministic ZIP layout:
 
 ```bash
-python tools/build_release_zip.py --version v1.0.1 --revision v1.0.1 --output-dir dist
+python tools/build_release_zip.py --version v1.0.2 --revision v1.0.2 --output-dir dist
 python tests/validate_release_zip.py
 ```
 

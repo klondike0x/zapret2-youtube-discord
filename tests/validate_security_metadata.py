@@ -8,7 +8,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_HASH = "81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1"
+RELEASE_HASH = "8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652"
+RELEASE_VERSION = "v1.0.2"
 
 
 def main() -> int:
@@ -18,6 +19,8 @@ def main() -> int:
 
     for token in [
         RELEASE_HASH,
+        RELEASE_VERSION,
+        f"zapret2-youtube-discord-{RELEASE_VERSION}.zip",
         f"https://www.virustotal.com/gui/file/{RELEASE_HASH}",
         "RiskTool",
         "VT_API_KEY",

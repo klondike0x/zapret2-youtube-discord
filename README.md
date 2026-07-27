@@ -30,16 +30,16 @@ GPG fingerprint релизов: `4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31
 
 Каждый отчёт VirusTotal относится **только к конкретному файлу с конкретным SHA-256**. Если архив был пересобран или изменён хотя бы на один байт, старый отчёт к нему больше не относится.
 
-[![VirusTotal](https://img.shields.io/badge/VirusTotal-отчёт_v1.0.1-394EFF?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-отчёт_v1.0.2-394EFF?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652)
 
 | Версия | Файл | SHA-256 | VirusTotal |
 | --- | --- | --- | --- |
-| v1.0.1 | `zapret2-youtube-discord-v1.0.1.zip` | `81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1` | [Открыть отчёт](https://www.virustotal.com/gui/file/81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1) |
+| v1.0.2 | `zapret2-youtube-discord-v1.0.2.zip` | `8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652` | [Открыть отчёт](https://www.virustotal.com/gui/file/8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652) |
 
 SHA-256 выше получен непосредственно из метаданных GitHub Release asset. Перед запуском рекомендуется сравнить хеш скачанного архива:
 
 ```powershell
-Get-FileHash .\zapret2-youtube-discord-v1.0.1.zip -Algorithm SHA256
+Get-FileHash .\zapret2-youtube-discord-v1.0.2.zip -Algorithm SHA256
 ```
 
 Проверка GPG-подписи опубликованного манифеста:
@@ -69,14 +69,14 @@ python tools/generate_virustotal_table.py dist/<архив> --version vX.Y.Z
 Portable ZIP собирается из файлов конкретного Git-коммита, а не из произвольного содержимого рабочей папки:
 
 ```bash
-python tools/build_release_zip.py --version v1.0.1 --revision v1.0.1 --output-dir dist
+python tools/build_release_zip.py --version v1.0.2 --revision v1.0.2 --output-dir dist
 python tests/validate_release_zip.py
 ```
 
 Workflow `Build verification` запускает проверки, собирает настоящий ZIP и для запусков в публичном репозитории вне pull request публикует GitHub artifact attestation. Attestation связывает полученный архив с репозиторием, workflow и коммитом. Она дополняет, но не заменяет подписанные `SHA256SUMS.txt` и `SHA256SUMS.txt.asc` в официальном релизе.
 
 > [!IMPORTANT]
-> Архив `zapret2-youtube-discord-v1.0.0.zip` был ошибочно создан в формате TAR при расширении `.zip`. Для Windows используйте исправленный релиз `v1.0.1` или новее. Начиная с `v1.0.1`, формат и целостность ZIP проверяются автоматически перед публикацией.
+> Архив `zapret2-youtube-discord-v1.0.0.zip` был ошибочно создан в формате TAR при расширении `.zip`, а в `v1.0.1` BAT-файлы и профили попали в ZIP с переносами LF. Для Windows используйте `v1.0.2` или новее. Формат ZIP, целостность и CRLF теперь проверяются автоматически перед публикацией.
 
 ## 🚀 Быстрый запуск
 
