@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import re
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICE = ROOT / "service.bat"
+CONTROL = ROOT / "tools" / "service-control.ps1"
 PREPARE = ROOT / "tools" / "prepare-service-profile.ps1"
 
 
@@ -21,40 +21,67 @@ def require(text: str, token: str, label: str) -> None:
 
 def main() -> int:
     service = SERVICE.read_text(encoding="utf-8-sig")
-
     for token in [
-        'set "SERVICE=winws2"',
-        'set "LEGACY_SERVICE=zapret2-youtube-discord"',
-        'set "SERVICE_DISPLAY=zapret2 YouTube Discord"',
-        "prepare-service-profile.ps1",
-        "service-next.txt",
-        "service-active.txt",
-        "sc create",
-        "sc start",
-        "sc stop",
-        "sc delete",
-        'set "SERVICE_BIN=\\\"%~dp0bin\\winws2.exe\\\" @\\\"%~dp0tools\\service-active.txt\\\""',
-        "Service was created but failed to start",
-        "Refusing to replace a winws2 service owned by another installation",
-        "call :remove_legacy_quiet",
+        "service-control.ps1",
+        "-Action Install",
+        "-Action Remove",
+        "-Action Start",
+        "-Action Stop",
+        "-Action Status",
+        "DisableDelayedExpansion",
+        "ZAPRET_SERVICE_SCRIPT",
+        "WindowsBuiltInRole]::Administrator",
+        "System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "COMSPEC_TRUSTED=C:\\Windows\\System32\\cmd.exe",
+        "The previous working configuration",
+        "stop-manual-winws2.ps1",
     ]:
         require(service, token, "service.bat")
+    if "EnableDelayedExpansion" in service:
+        fail("service.bat искажает пути с символом !")
+    if "taskkill /IM winws2.exe" in service:
+        fail("service.bat не должен завершать все процессы winws2.exe")
 
-    if 'set "SERVICE=zapret2-youtube-discord"' in service:
-        fail("SCM имя должно совпадать с SERVICE_NAME=winws2 внутри бинарника")
-    if re.search(r'sc create[^\r\n]+powershell\.exe', service, re.I):
-        fail("SCM должен запускать winws2.exe напрямую, а не powershell.exe")
-    if re.search(r"taskkill\s+/IM\s+winws2\.exe", service, re.I):
-        fail("service.bat не должен завершать все процессы winws2.exe по имени")
-    if 'reg query "HKLM\\System\\CurrentControlSet\\Services\\%SERVICE%" /v ImagePath' not in service:
-        fail("service.bat не проверяет владельца существующей службы winws2")
-    if "%SystemRoot%\\System32\\findstr.exe" not in service:
-        fail("service.bat должен явно использовать Windows findstr.exe, а не внешний find из PATH")
-    if re.search(r"\|\s*find(?:\.exe)?\s+/I", service, re.I):
-        fail("service.bat зависит от неоднозначного find из PATH")
+    if not CONTROL.is_file():
+        fail("отсутствует tools/service-control.ps1")
+    control = CONTROL.read_text(encoding="utf-8-sig")
+    for token in [
+        "$serviceName = 'winws2'",
+        "$legacyServiceName = 'zapret2-youtube-discord'",
+        "Get-ImageExecutable",
+        "OrdinalIgnoreCase",
+        "Wait-ServiceState $serviceName 'Running'",
+        "Wait-ServiceState $serviceName 'Absent'",
+        "service-backup.txt",
+        "Remove-LegacyIfOwned",
+        "Test-LegacyOwner",
+        "$previousProfile",
+        "$previousBinaryPath",
+        "$previousStartMode",
+        "$previousWasRunning",
+        "$updatedExisting",
+        "$activeExisted",
+        "$createdRemoved",
+        "$sc = 'C:\\Windows\\System32\\sc.exe'",
+        "Find-ServiceRecord",
+        "New-Service",
+        "Start-Service",
+        "Stop-Service",
+    ]:
+        require(control, token, "service-control.ps1")
+    if "IndexOf($exe" in control or "findstr" in control.lower():
+        fail("ownership должен сравнивать разобранный executable целиком")
+    if "Remove-LegacyIfOwned" not in control or "$expectedScript" not in control:
+        fail("legacy service удаляется без проверки владельца")
+    if "IndexOf($expectedScript" in control or ".Contains($expectedScript" in control:
+        fail("legacy ownership не должен использовать поиск подстроки")
+    for token in ["[Regex]::Match(", "$actualScript.Equals($expectedScript", "-NoProfile\\s+-ExecutionPolicy", "-ProfilePath"]:
+        require(control, token, "legacy ownership")
+    for token in ["C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "$hostPath.Equals($trustedHost", "$actualProfile.StartsWith($profileRoot"]:
+        require(control, token, "exact legacy ownership")
+    for token in ["'Disabled' { 'disabled' }", "Rollback incomplete", "legacy cleanup failed", "$LASTEXITCODE -eq 0", "$installError", "Failed to update service description"]:
+        require(control, token, "transaction rollback")
 
-    if not PREPARE.is_file():
-        fail("отсутствует tools/prepare-service-profile.ps1")
     prepare = PREPARE.read_text(encoding="utf-8-sig")
     for token in ["--chdir=", "WriteAllText", "ProfilePath", "service-active.txt"]:
         require(prepare, token, "prepare-service-profile.ps1")
@@ -92,7 +119,7 @@ def main() -> int:
     finally:
         output.unlink(missing_ok=True)
 
-    print("PASS winws2 SCM service manager contract")
+    print("PASS winws2 transactional SCM service manager contract")
     return 0
 
 

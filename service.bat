@@ -1,40 +1,43 @@
 @echo off
-set "LOCAL_VERSION=2.0.1"
-set "SERVICE=winws2"
-set "LEGACY_SERVICE=zapret2-youtube-discord"
-set "SERVICE_DISPLAY=zapret2 YouTube Discord"
-set "PROFILE_VALUE=Profile"
+set "LOCAL_VERSION=2.0.2"
+set "SERVICE_CONTROL=%~dp0tools\service-control.ps1"
+set "POWERSHELL=C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
+set "COMSPEC_TRUSTED=C:\Windows\System32\cmd.exe"
 
 if /i "%~1"=="admin" goto elevated
 
 call :check_extracted
 if errorlevel 1 exit /b 1
-where powershell.exe >nul 2>&1
-if errorlevel 1 (
+if not exist "%POWERSHELL%" (
     echo [ERROR] powershell.exe not found in PATH.
     pause
     exit /b 1
 )
 
-net session >nul 2>&1
+"%POWERSHELL%" -NoProfile -Command "if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { exit 1 }"
 if errorlevel 1 (
     echo Requesting administrator rights...
-    powershell.exe -NoProfile -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/d /c ""%~f0" admin"' -WorkingDirectory '%~dp0' -Verb RunAs"
+    set "ZAPRET_SERVICE_SCRIPT=%~f0"
+    "%POWERSHELL%" -NoProfile -Command "Start-Process -FilePath $env:COMSPEC_TRUSTED -ArgumentList @('/d','/c',(('^"{0}^" admin') -f $env:ZAPRET_SERVICE_SCRIPT)) -WorkingDirectory (Split-Path -LiteralPath $env:ZAPRET_SERVICE_SCRIPT) -Verb RunAs"
     exit /b
 )
 
 :elevated
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions DisableDelayedExpansion
+"%POWERSHELL%" -NoProfile -Command "if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { exit 1 }"
+if errorlevel 1 (
+    echo Administrator rights are required.
+    pause
+    exit /b 1
+)
 chcp 65001 >nul
 cd /d "%~dp0"
 title ZAPRET2 SERVICE MANAGER v%LOCAL_VERSION%
 
 :menu
-call :get_profile_name
 cls
 echo.
 echo   ZAPRET2 SERVICE MANAGER v%LOCAL_VERSION%
-if defined CurrentProfile echo   !CurrentProfile!
 echo   ----------------------------------------
 echo.
 echo      1. Install profile as service
@@ -58,13 +61,6 @@ goto menu
 
 :service_install
 cls
-call :check_service_owner
-if errorlevel 1 (
-    echo Refusing to replace a winws2 service owned by another installation.
-    pause
-    goto menu
-)
-set "PROFILE_PATH="
 set "PROFILE_REL="
 echo Select a Zapret2 profile:
 echo   1. General
@@ -94,140 +90,48 @@ if not defined PROFILE_REL (
     pause
     goto menu
 )
-set "PROFILE_PATH=%~dp0!PROFILE_REL!"
-if not exist "!PROFILE_PATH!" (
-    echo Profile not found: !PROFILE_PATH!
+set "PROFILE_PATH=%~dp0%PROFILE_REL%"
+if not exist "%PROFILE_PATH%" (
+    echo Profile not found: %PROFILE_PATH%
     pause
     goto menu
 )
-for %%F in ("!PROFILE_PATH!") do set "PROFILE_NAME=%%~nxF"
-
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\prepare-service-profile.ps1" -ProfilePath "!PROFILE_PATH!" -OutputPath "%~dp0tools\service-next.txt" >nul
-if errorlevel 1 (
-    echo Failed to prepare the Zapret2 service profile.
-    pause
-    goto menu
-)
-
-call :remove_legacy_quiet
-call :remove_quiet
-if errorlevel 1 (
-    if exist "%~dp0tools\service-next.txt" del /f /q "%~dp0tools\service-next.txt" >nul 2>&1
-    echo Failed to remove the existing service. The old configuration was preserved.
-    pause
-    goto menu
-)
-move /y "%~dp0tools\service-next.txt" "%~dp0tools\service-active.txt" >nul
-if errorlevel 1 (
-    echo Failed to activate the prepared service profile.
-    pause
-    goto menu
-)
-
-set "SERVICE_BIN=\"%~dp0bin\winws2.exe\" @\"%~dp0tools\service-active.txt\""
-sc create "%SERVICE%" binPath= "!SERVICE_BIN!" DisplayName= "%SERVICE_DISPLAY%" start= auto
-if errorlevel 1 (
-    echo Failed to create service.
-    pause
-    goto menu
-)
-sc description "%SERVICE%" "Zapret2 DPI bypass with a selectable Lua profile" >nul
-reg add "HKLM\System\CurrentControlSet\Services\%SERVICE%" /v "%PROFILE_VALUE%" /t REG_SZ /d "!PROFILE_REL!" /f >nul
-sc start "%SERVICE%"
-if errorlevel 1 (
-    echo Service was created but failed to start.
-    sc query "%SERVICE%"
-) else (
-    echo Service installed and started with !PROFILE_NAME!.
-)
+"%POWERSHELL%" -NoProfile -ExecutionPolicy Bypass -File "%SERVICE_CONTROL%" -Action Install -ProfilePath "%PROFILE_PATH%" -ProfileRelative "%PROFILE_REL%"
+if errorlevel 1 echo Service installation failed. The previous working configuration was preserved when possible.
 pause
 goto menu
 
 :service_remove
 cls
-call :remove_quiet
-if errorlevel 1 (
-    echo Failed to remove service. Runtime profile was preserved.
-    pause
-    goto menu
-)
-if exist "%~dp0tools\service-active.txt" del /f /q "%~dp0tools\service-active.txt" >nul 2>&1
-echo Service removed.
+"%POWERSHELL%" -NoProfile -ExecutionPolicy Bypass -File "%SERVICE_CONTROL%" -Action Remove
 pause
 goto menu
 
-:remove_quiet
-sc query "%SERVICE%" >nul 2>&1
-if errorlevel 1 exit /b 0
-call :check_service_owner
-if errorlevel 1 exit /b 1
-sc stop "%SERVICE%" >nul 2>&1
-for /l %%N in (1,1,20) do (
-    sc query "%SERVICE%" 2>nul | findstr /I "STOP_PENDING" >nul || goto remove_delete
-    timeout.exe /t 1 /nobreak >nul
-)
-exit /b 1
-:remove_delete
-sc delete "%SERVICE%" >nul 2>&1
-if errorlevel 1 exit /b 1
-for /l %%N in (1,1,20) do (
-    sc query "%SERVICE%" >nul 2>&1
-    if errorlevel 1 exit /b 0
-    timeout.exe /t 1 /nobreak >nul
-)
-exit /b 1
-
-:remove_legacy_quiet
-sc query "%LEGACY_SERVICE%" >nul 2>&1
-if errorlevel 1 exit /b 0
-sc stop "%LEGACY_SERVICE%" >nul 2>&1
-sc delete "%LEGACY_SERVICE%" >nul 2>&1
-exit /b 0
-
-:check_service_owner
-sc query "%SERVICE%" >nul 2>&1
-if errorlevel 1 exit /b 0
-set "SERVICE_IMAGE="
-for /f "tokens=2,*" %%A in ('reg query "HKLM\System\CurrentControlSet\Services\%SERVICE%" /v ImagePath 2^>nul ^| %SystemRoot%\System32\findstr.exe /L /I /C:"ImagePath"') do set "SERVICE_IMAGE=%%B"
-if not defined SERVICE_IMAGE exit /b 1
-echo(!SERVICE_IMAGE!| %SystemRoot%\System32\findstr.exe /L /I /C:"%~dp0bin\winws2.exe" >nul
-if errorlevel 1 exit /b 1
-exit /b 0
-
 :service_start
 cls
-sc start "%SERVICE%"
+"%POWERSHELL%" -NoProfile -ExecutionPolicy Bypass -File "%SERVICE_CONTROL%" -Action Start
 pause
 goto menu
 
 :service_stop
 cls
-sc stop "%SERVICE%"
+"%POWERSHELL%" -NoProfile -ExecutionPolicy Bypass -File "%SERVICE_CONTROL%" -Action Stop
 pause
 goto menu
 
 :service_status
 cls
-sc query "%SERVICE%"
-echo.
-for /f "tokens=2,*" %%A in ('reg query "HKLM\System\CurrentControlSet\Services\%SERVICE%" /v "%PROFILE_VALUE%" 2^>nul ^| %SystemRoot%\System32\findstr.exe /L /I /C:"%PROFILE_VALUE%"') do echo Active profile: %%B
-echo.
-tasklist /FI "IMAGENAME eq winws2.exe"
+"%POWERSHELL%" -NoProfile -ExecutionPolicy Bypass -File "%SERVICE_CONTROL%" -Action Status
 pause
 goto menu
 
 :stop_manual
 cls
 set "STOPPED_MANUAL=0"
-for /f "delims=" %%N in ('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\stop-manual-winws2.ps1" 2^>nul') do set "STOPPED_MANUAL=%%N"
-if "!STOPPED_MANUAL!"=="0" (echo No manual winws2.exe from this bundle is running.) else (echo Stopped !STOPPED_MANUAL! manual winws2.exe process(es).)
+for /f "delims=" %%N in ('"%POWERSHELL%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\stop-manual-winws2.ps1" 2^>nul') do set "STOPPED_MANUAL=%%N"
+if "%STOPPED_MANUAL%"=="0" (echo No manual winws2.exe from this bundle is running.) else (echo Stopped %STOPPED_MANUAL% manual winws2.exe process(es).)
 pause
 goto menu
-
-:get_profile_name
-set "CurrentProfile="
-for /f "tokens=2,*" %%A in ('reg query "HKLM\System\CurrentControlSet\Services\%SERVICE%" /v "%PROFILE_VALUE%" 2^>nul') do set "CurrentProfile=Profile: %%B"
-exit /b
 
 :check_extracted
 if not exist "%~dp0bin\winws2.exe" (
@@ -237,6 +141,11 @@ if not exist "%~dp0bin\winws2.exe" (
 )
 if not exist "%~dp0profiles\" (
     echo profiles folder not found.
+    pause
+    exit /b 1
+)
+if not exist "%~dp0tools\service-control.ps1" (
+    echo tools\service-control.ps1 not found.
     pause
     exit /b 1
 )

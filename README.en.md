@@ -93,7 +93,7 @@ User-maintained domain and IP lists are under `lists/`. Add one domain, IP addre
 
 ## Service mode
 
-Run `service.bat` as administrator to install a selected profile as the `zapret2-youtube-discord` Windows service, start or stop it, inspect its status, or remove it. Stop the service before launching a profile manually.
+Run `service.bat` as administrator to install a selected profile as the `winws2` Windows service, shown as `zapret2 YouTube Discord`, start or stop it, inspect its status, or remove it. Stop the service before launching a profile manually.
 
 ## Validation
 
