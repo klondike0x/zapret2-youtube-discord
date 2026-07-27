@@ -27,6 +27,12 @@ def git_file(root: Path, revision: str, name: str) -> bytes:
     return result.stdout
 
 
+def windows_release_data(name: str, data: bytes) -> bytes:
+    if name.lower().endswith((".bat", ".cmd")):
+        return data.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    return data
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build a real portable ZIP from a committed Git tree")
     parser.add_argument("--version", required=True, help="Release version, for example v1.0.1")
@@ -52,7 +58,7 @@ def main() -> int:
     try:
         with zipfile.ZipFile(temporary_archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as bundle:
             for name in release_names:
-                data = git_file(root, args.revision, name)
+                data = windows_release_data(name, git_file(root, args.revision, name))
                 info = zipfile.ZipInfo(str(prefix / PurePosixPath(name)), date_time=(1980, 1, 1, 0, 0, 0))
                 info.compress_type = zipfile.ZIP_DEFLATED
                 info.external_attr = 0o100644 << 16

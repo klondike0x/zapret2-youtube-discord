@@ -46,6 +46,11 @@ def main() -> int:
             if bundle.testzip() is not None:
                 return fail("ZIP CRC/integrity verification failed")
             names = bundle.namelist()
+            for name in names:
+                if name.lower().endswith((".bat", ".cmd")):
+                    raw = bundle.read(name)
+                    if b"\x0a" in raw.replace(b"\x0d\x0a", b""):
+                        return fail(f"Windows command script uses LF instead of CRLF: {name}")
         prefix = f"zapret2-youtube-discord-{VERSION}/"
         if not names or any(not name.startswith(prefix) for name in names):
             return fail("ZIP entries do not use one versioned top-level directory")
