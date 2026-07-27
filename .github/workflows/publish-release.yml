@@ -1,0 +1,229 @@
+name: Publish verified release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing signed version tag to publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  validate-and-build:
+    name: Validate and build from signed tag
+    runs-on: windows-latest
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      asset: ${{ steps.release.outputs.asset }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Select and verify release tag
+        id: release
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = if ($env:EVENT_NAME -eq "push") { $env:REF_NAME } else { $env:INPUT_TAG }
+          if ($tag -notmatch '^v\d+\.\d+\.\d+$') { throw "Expected a version tag such as v1.0.3, got: $tag" }
+          git fetch --force origin "refs/tags/$tag`:refs/tags/$tag"
+          git cat-file -e "$tag^{tag}"
+          gpg --import release-signing-key.asc
+          git verify-tag "$tag"
+          git merge-base --is-ancestor "$tag^{commit}" origin/main
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "asset=zapret2-youtube-discord-$tag.zip" >> $env:GITHUB_OUTPUT
+
+      - name: Run maintained validators
+        shell: cmd
+        run: |
+          python tests\validate_project.py
+          python tests\validate_flowseal_alt_port.py
+          python tests\validate_strategy_variants.py
+          python tests\validate_release_zip.py
+          python tests\validate_security_metadata.py
+          python tests\validate_trust_docs.py
+          python tests\validate_virustotal_upload.py
+
+      - name: Build deterministic Windows ZIP from exact tag
+        shell: pwsh
+        run: |
+          python tools/build_release_zip.py --version "${{ steps.release.outputs.tag }}" --revision "${{ steps.release.outputs.tag }}" --output-dir dist
+          python -c "from pathlib import Path; import zipfile; p=Path('dist')/'${{ steps.release.outputs.asset }}'; assert p.read_bytes()[:4] == b'PK\x03\x04'; z=zipfile.ZipFile(p); assert z.testzip() is None; print(f'ZIP verified: {p.name}, {len(z.namelist())} files')"
+
+      - name: Upload exact ZIP between jobs
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-zip-${{ steps.release.outputs.tag }}
+          path: dist/${{ steps.release.outputs.asset }}
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Sign, publish, redownload, and analyze
+    runs-on: ubuntu-latest
+    needs: validate-and-build
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ needs.validate-and-build.outputs.tag }}
+      RELEASE_ASSET: ${{ needs.validate-and-build.outputs.asset }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-zip-${{ needs.validate-and-build.outputs.tag }}
+          path: dist
+
+      - name: Require protected release secrets
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "$GPG_PRIVATE_KEY" ] || { echo "GPG_PRIVATE_KEY is not configured" >&2; exit 1; }
+          [ -n "$GPG_PASSPHRASE" ] || { echo "GPG_PASSPHRASE is not configured" >&2; exit 1; }
+          [ -n "$VT_API_KEY" ] || { echo "VT_API_KEY is not configured" >&2; exit 1; }
+
+      - name: Create and sign checksum manifest
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          printf '%s' "$GPG_PASSPHRASE" > "$RUNNER_TEMP/gpg-passphrase"
+          chmod 600 "$RUNNER_TEMP/gpg-passphrase"
+          cd dist
+          sha256sum "$RELEASE_ASSET" > SHA256SUMS.txt
+          gpg --batch --yes --armor --detach-sign --pinentry-mode loopback \
+            --passphrase-file "$RUNNER_TEMP/gpg-passphrase" SHA256SUMS.txt
+          gpg --armor --export 40015491B3A63D777855FEC08DA82B54BDED31AE > release-signing-key.asc
+          gpg --verify SHA256SUMS.txt.asc SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          rm -f "$RUNNER_TEMP/gpg-passphrase"
+
+      - name: Attest exact release ZIP
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/${{ needs.validate-and-build.outputs.asset }}
+
+      - name: Create draft GitHub Release and upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; refusing to replace immutable assets" >&2
+            exit 1
+          fi
+          release_url=$(gh api --method POST "repos/${{ github.repository }}/releases" \
+            -f tag_name="$RELEASE_TAG" \
+            -f target_commitish="${{ github.sha }}" \
+            -f name="$RELEASE_TAG" \
+            -f body="Automated release verification is in progress. The draft will be published after GitHub redownload verification and VirusTotal analysis." \
+            -F draft=true \
+            -F prerelease=false \
+            --jq .html_url)
+          gh release upload "$RELEASE_TAG" \
+            dist/"$RELEASE_ASSET" \
+            dist/SHA256SUMS.txt \
+            dist/SHA256SUMS.txt.asc \
+            dist/release-signing-key.asc
+          echo "Draft release: $release_url"
+
+      - name: Redownload and verify published bytes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir redownload
+          gh release download "$RELEASE_TAG" --dir redownload
+          cd redownload
+          gpg --import release-signing-key.asc
+          gpg --verify SHA256SUMS.txt.asc SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          python - "$RELEASE_ASSET" <<'PY'
+          import sys
+          import zipfile
+          from pathlib import Path
+
+          asset = Path(sys.argv[1])
+          if asset.read_bytes()[:4] != b"PK\x03\x04":
+              raise SystemExit("release asset is not a ZIP archive")
+          with zipfile.ZipFile(asset) as bundle:
+              bad = bundle.testzip()
+              if bad:
+                  raise SystemExit(f"ZIP CRC failed at {bad}")
+              checked = [n for n in bundle.namelist() if n.lower().endswith((".bat", ".cmd")) or ("/profiles/" in n and n.lower().endswith(".txt"))]
+              for name in checked:
+                  if b"\n" in bundle.read(name).replace(b"\r\n", b""):
+                      raise SystemExit(f"LF-only line ending: {name}")
+              print(f"Redownloaded ZIP verified: {len(bundle.namelist())} files, {len(checked)} CRLF files")
+          PY
+
+      - name: Upload exact redownloaded ZIP to VirusTotal
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          python tools/upload_virustotal.py "redownload/$RELEASE_ASSET" --report VIRUSTOTAL.md
+
+      - name: Add VirusTotal evidence and publish Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view "$RELEASE_TAG" --json body --jq .body > RELEASE_NOTES.md
+          python - <<'PY'
+          from pathlib import Path
+          notes = Path("RELEASE_NOTES.md").read_text(encoding="utf-8").rstrip()
+          report = Path("VIRUSTOTAL.md").read_text(encoding="utf-8").strip()
+          Path("RELEASE_NOTES.updated.md").write_text(notes + "\n\n" + report + "\n", encoding="utf-8")
+          PY
+          gh release edit "$RELEASE_TAG" --notes-file RELEASE_NOTES.updated.md --draft=false
+
+      - name: Remove failed draft Release
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft 2>/dev/null | grep -qx true; then
+            gh release delete "$RELEASE_TAG" --yes --cleanup-tag=false
+          fi
+
+      - name: Upload public verification metadata
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-evidence-${{ needs.validate-and-build.outputs.tag }}
+          path: |
+            VIRUSTOTAL.md
+            redownload/SHA256SUMS.txt
+            redownload/SHA256SUMS.txt.asc
+          if-no-files-found: error
+          retention-days: 90

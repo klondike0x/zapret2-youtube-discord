@@ -62,7 +62,7 @@ sha256sum -c SHA256SUMS.txt
 python tools/generate_virustotal_table.py dist/<архив> --version vX.Y.Z
 ```
 
-При наличии секрета `VT_API_KEY` workflow `.github/workflows/release-security.yml` дополнительно читает статистику существующего отчёта. Ключ VirusTotal никогда не должен храниться в репозитории — только в GitHub Actions Secrets.
+При публикации GitHub Release workflow `.github/workflows/release-security.yml` повторно скачивает точный ZIP asset с GitHub, проверяет SHA-256, GPG, CRC и CRLF, загружает этот же файл на VirusTotal, ждёт завершения анализа и добавляет отчёт в Release notes. Ключ `VT_API_KEY` хранится только в GitHub Actions Secrets.
 
 ## 🔍 Воспроизводимая сборка и provenance
 

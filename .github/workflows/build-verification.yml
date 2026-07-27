@@ -34,6 +34,7 @@ jobs:
           python tests\validate_release_zip.py
           python tests\validate_security_metadata.py
           python tests\validate_trust_docs.py
+          python tests\validate_virustotal_upload.py
 
   build-zip:
     name: Build genuine ZIP

@@ -39,10 +39,10 @@ def main() -> int:
     if 'os.environ.get("VT_API_KEY")' not in script.read_text(encoding="utf-8"):
         print("FAIL generator: VT_API_KEY из окружения не используется", file=sys.stderr)
         return 1
-    if "secrets.VT_API_KEY" in workflow and "permissions:\n  contents: read" not in workflow:
-        print("FAIL workflow: permissions должны оставаться read-only", file=sys.stderr)
+    if "secrets.VT_API_KEY" in workflow and "permissions:\n  contents: write" not in workflow:
+        print("FAIL workflow: contents: write требуется только для обновления Release notes", file=sys.stderr)
         return 1
-    for token in ["zipfile.ZipFile", "release asset has .zip extension but is not a ZIP archive", "testzip"]:
+    for token in ["zipfile.ZipFile", "release asset is not a ZIP archive", "testzip"]:
         if token not in workflow:
             print(f"FAIL workflow: отсутствует проверка ZIP: {token}", file=sys.stderr)
             return 1
@@ -85,7 +85,7 @@ def main() -> int:
             return 1
 
     print("PASS README: SHA-256, VirusTotal, GPG and false-positive warning")
-    print("PASS workflow: read-only metadata generation with secret-only API key")
+    print("PASS workflow: exact release upload with secret-only API key")
     print("PASS generator: report URL is deterministically derived from artifact SHA-256")
     return 0
 

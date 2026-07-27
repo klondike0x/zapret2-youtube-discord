@@ -70,6 +70,8 @@ sha256sum -c SHA256SUMS.txt
 
 GPG proves origin and integrity, not that software is harmless. A VirusTotal report is an additional signal tied to one exact SHA-256, not an antivirus guarantee.
 
+When a GitHub Release is published, `.github/workflows/release-security.yml` downloads the exact ZIP asset back from GitHub, verifies its SHA-256, GPG signature, CRC, and CRLF line endings, submits that same file to VirusTotal, waits for analysis, and appends the report to the Release notes. `VT_API_KEY` is stored only in GitHub Actions Secrets.
+
 The `v1.0.0` asset was mistakenly packaged as TAR under a `.zip` extension. The `v1.0.1` ZIP contained LF line endings in Windows scripts and profiles. Both have been superseded by `v1.0.2`.
 
 ## Reproducing the ZIP
