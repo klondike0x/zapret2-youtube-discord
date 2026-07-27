@@ -26,6 +26,7 @@ def main() -> int:
         "github/v/release/klondike0x/zapret2-youtube-discord",
         "github/downloads/klondike0x/zapret2-youtube-discord/total",
         "81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1",
+        "https://www.virustotal.com/gui/file/81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1",
         "v1.0.1",
     ]:
         require(readme, token, "README.md")

@@ -52,7 +52,7 @@ The corrected `v1.0.1` Windows asset is a genuine ZIP archive:
 
 | Version | Asset | SHA-256 | VirusTotal |
 | --- | --- | --- | --- |
-| v1.0.1 | `zapret2-youtube-discord-v1.0.1.zip` | `81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1` | Analysis link will be published only after the same SHA-256 has completed analysis |
+| v1.0.1 | `zapret2-youtube-discord-v1.0.1.zip` | `81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1` | [Open report](https://www.virustotal.com/gui/file/81432955e3bf30d434454e891173e91b8b7885fee99dbbadf19d5c2305d53fa1) |
 
 Check the downloaded file in PowerShell:
 

@@ -18,7 +18,7 @@ def main() -> int:
 
     for token in [
         RELEASE_HASH,
-        "Ссылка будет опубликована только после завершённого анализа",
+        f"https://www.virustotal.com/gui/file/{RELEASE_HASH}",
         "RiskTool",
         "VT_API_KEY",
         "Get-FileHash",
