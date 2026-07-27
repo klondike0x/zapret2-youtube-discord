@@ -63,7 +63,6 @@ def main() -> int:
         "git verify-tag",
         "tools/build_release_zip.py",
         "GPG_PRIVATE_KEY",
-        "GPG_PASSPHRASE",
         "${{ secrets.VT_API_KEY }}",
         "actions/attest-build-provenance@v4",
         'gh api --method POST "repos/${{ github.repository }}/releases"',

@@ -108,7 +108,6 @@ jobs:
         run: |
           set -euo pipefail
           [ -n "$GPG_PRIVATE_KEY" ] || { echo "GPG_PRIVATE_KEY is not configured" >&2; exit 1; }
-          [ -n "$GPG_PASSPHRASE" ] || { echo "GPG_PASSPHRASE is not configured" >&2; exit 1; }
           [ -n "$VT_API_KEY" ] || { echo "VT_API_KEY is not configured" >&2; exit 1; }
 
       - name: Create and sign checksum manifest
