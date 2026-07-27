@@ -91,13 +91,27 @@ def validate_launchers() -> None:
 
 def validate_service() -> None:
     text = (ROOT / "service.bat").read_text(encoding="utf-8-sig")
-    for token in ["winws2.exe", "taskkill /IM winws2.exe", "sc create", "sc delete", "PROFILE_PATH", "SERVICE_PS1", "run-service.ps1"]:
+    for token in [
+        'set "SERVICE=winws2"',
+        "winws2.exe",
+        "sc create",
+        "sc delete",
+        "PROFILE_PATH",
+        "prepare-service-profile.ps1",
+        "service-active.txt",
+        "stop-manual-winws2.ps1",
+    ]:
         if token.lower() not in text.lower():
             fail(f"service.bat: отсутствует {token}")
     if "@$PROFILE" in text:
         fail("service.bat содержит литерал $PROFILE вместо BAT-переменной")
     if re.search(r"taskkill\s+/IM\s+winws\.exe", text, re.I):
         fail("service.bat управляет старым winws.exe")
+    if re.search(r"taskkill\s+/IM\s+winws2\.exe", text, re.I):
+        fail("service.bat не должен завершать все процессы winws2.exe")
+    create_lines = [line.lower() for line in text.splitlines() if "sc create" in line.lower()]
+    if any("powershell.exe" in line for line in create_lines):
+        fail("SCM должен запускать winws2.exe напрямую")
 
 
 def validate_binary() -> None:

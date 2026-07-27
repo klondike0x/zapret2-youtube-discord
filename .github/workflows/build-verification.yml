@@ -29,6 +29,7 @@ jobs:
         shell: cmd
         run: |
           python tests\validate_project.py
+          python tests\validate_service_manager.py
           python tests\validate_flowseal_alt_port.py
           python tests\validate_strategy_variants.py
           python tests\validate_release_zip.py
