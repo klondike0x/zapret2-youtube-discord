@@ -61,8 +61,8 @@ def main() -> int:
     for token in [
         "python tools/build_release_zip.py",
         "python tests\\validate_release_zip.py",
-        "actions/upload-artifact@v4",
-        "actions/attest-build-provenance@v3",
+        "actions/upload-artifact@v7",
+        "actions/attest-build-provenance@v4",
         "attestations: write",
         "id-token: write",
     ]:
