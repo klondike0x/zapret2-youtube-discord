@@ -8,8 +8,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE_HASH = "8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652"
-RELEASE_VERSION = "v1.0.2"
+RELEASE_HASH = "b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b"
+RELEASE_VERSION = "v1.0.3"
 
 
 def main() -> int:
