@@ -92,13 +92,9 @@ def validate_launchers() -> None:
 def validate_service() -> None:
     text = (ROOT / "service.bat").read_text(encoding="utf-8-sig")
     for token in [
-        'set "SERVICE=winws2"',
         "winws2.exe",
-        "sc create",
-        "sc delete",
         "PROFILE_PATH",
-        "prepare-service-profile.ps1",
-        "service-active.txt",
+        "service-control.ps1",
         "stop-manual-winws2.ps1",
     ]:
         if token.lower() not in text.lower():

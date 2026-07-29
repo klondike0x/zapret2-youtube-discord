@@ -28,6 +28,8 @@ def main() -> int:
         "8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652",
         "https://www.virustotal.com/gui/file/8b1ca630a86ba3bf9a2cb5a90e5eca980d62d0ce1c7f64ac9e524687a7d41652",
         "v1.0.2",
+        "goshkow.com/zapret-hub/marketplace/projects/https_github_com_klondike0x_zapret2_youtube_discor",
+        "Zapret Hub Marketplace",
     ]:
         require(readme, token, "README.md")
     if "c3091bb6f9fa0b6cef96763ced928ff7647eaaddc3cb04adc5cd0bfc4aa88a6f" in readme:
@@ -40,6 +42,8 @@ def main() -> int:
         "4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31AE",
         "VirusTotal",
         "NOTICE",
+        "goshkow.com/zapret-hub/marketplace/projects/https_github_com_klondike0x_zapret2_youtube_discor",
+        "Zapret Hub Marketplace",
     ]:
         require(english, token, "README.en.md")
 
