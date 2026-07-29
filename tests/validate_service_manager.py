@@ -9,6 +9,9 @@ SERVICE = ROOT / "service.bat"
 CONTROL = ROOT / "tools" / "service-control.ps1"
 PREPARE = ROOT / "tools" / "prepare-service-profile.ps1"
 STRATEGY_TEST = ROOT / "tools" / "test-strategies.ps1"
+IMAGEPATH_TEST = ROOT / "tests" / "validate_service_imagepath.ps1"
+BUILD_WORKFLOW = ROOT / ".github" / "workflows" / "build-verification.yml"
+PUBLISH_WORKFLOW = ROOT / ".github" / "workflows" / "publish-release.yml"
 
 
 def fail(message: str) -> None:
@@ -124,6 +127,8 @@ def main() -> int:
 
     if not CONTROL.is_file():
         fail("отсутствует tools/service-control.ps1")
+    if not IMAGEPATH_TEST.is_file():
+        fail("отсутствует tests/validate_service_imagepath.ps1")
     control = CONTROL.read_text(encoding="utf-8-sig")
     for token in [
         "$serviceName = 'winws2'",
@@ -174,6 +179,34 @@ def main() -> int:
         require(control, token, "exact legacy ownership")
     for token in ["'Disabled' { 'disabled' }", "Rollback incomplete", "legacy cleanup failed", "$LASTEXITCODE -ne 0", "$installError", "Failed to update service description"]:
         require(control, token, "transaction rollback")
+
+    imagepath_probe = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(IMAGEPATH_TEST),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=60,
+    )
+    if imagepath_probe.returncode != 0 or "PASS quoted and unquoted" not in imagepath_probe.stdout:
+        fail(f"разбор ImagePath завершился ошибкой: {(imagepath_probe.stdout + imagepath_probe.stderr).strip()}")
+
+    for workflow_path in [BUILD_WORKFLOW, PUBLISH_WORKFLOW]:
+        workflow = workflow_path.read_text(encoding="utf-8-sig")
+        if "PYTHONUTF8: 1" not in workflow:
+            fail(f"{workflow_path.name}: Python UTF-8 mode is not enabled")
+        for line in workflow.splitlines():
+            command = line.strip()
+            if command.startswith(("python tests\\", "powershell -NoProfile")) and "|| exit /b 1" not in command:
+                fail(f"{workflow_path.name}: validator is not fail-fast: {command}")
 
     prepare = PREPARE.read_text(encoding="utf-8-sig")
     for token in ["--chdir=", "WriteAllText", "ProfilePath", "service-active.txt"]:

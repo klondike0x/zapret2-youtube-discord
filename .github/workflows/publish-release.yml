@@ -55,14 +55,18 @@ jobs:
 
       - name: Run maintained validators
         shell: cmd
+        env:
+          PYTHONUTF8: 1
         run: |
-          python tests\validate_project.py
-          python tests\validate_flowseal_alt_port.py
-          python tests\validate_strategy_variants.py
-          python tests\validate_release_zip.py
-          python tests\validate_security_metadata.py
-          python tests\validate_trust_docs.py
-          python tests\validate_virustotal_upload.py
+          python tests\validate_project.py || exit /b 1
+          python tests\validate_service_manager.py || exit /b 1
+          powershell -NoProfile -ExecutionPolicy Bypass -File tests\validate_service_imagepath.ps1 || exit /b 1
+          python tests\validate_flowseal_alt_port.py || exit /b 1
+          python tests\validate_strategy_variants.py || exit /b 1
+          python tests\validate_release_zip.py || exit /b 1
+          python tests\validate_security_metadata.py || exit /b 1
+          python tests\validate_trust_docs.py || exit /b 1
+          python tests\validate_virustotal_upload.py || exit /b 1
 
       - name: Build deterministic Windows ZIP from exact tag
         shell: pwsh

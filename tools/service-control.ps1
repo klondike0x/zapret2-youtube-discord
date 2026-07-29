@@ -42,9 +42,12 @@ function Get-ImageExecutable([string]$ImagePath) {
 function Get-ServiceConfigPath([string]$ImagePath) {
     if (-not $ImagePath) { return $null }
     $expanded = [Environment]::ExpandEnvironmentVariables($ImagePath).Trim()
-    $match = [Regex]::Match($expanded, '^\s*"[^"]+"\s+@"([^"]+)"\s*$')
+    $match = [Regex]::Match(
+        $expanded,
+        '^\s*(?:"[^"]+"|[^\s"]+)\s+@(?:"(?<config>[^"]+)"|(?<config>[^\s"]+))\s*$'
+    )
     if (-not $match.Success) { return $null }
-    try { return [IO.Path]::GetFullPath($match.Groups[1].Value) } catch { return $null }
+    try { return [IO.Path]::GetFullPath($match.Groups['config'].Value) } catch { return $null }
 }
 
 function Assert-CurrentOwner([object]$Service) {
