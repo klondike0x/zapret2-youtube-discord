@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SERVICE = ROOT / "service.bat"
 CONTROL = ROOT / "tools" / "service-control.ps1"
 PREPARE = ROOT / "tools" / "prepare-service-profile.ps1"
+STRATEGY_TEST = ROOT / "tools" / "test-strategies.ps1"
 
 
 def fail(message: str) -> None:
@@ -35,8 +36,87 @@ def main() -> int:
         "COMSPEC_TRUSTED=C:\\Windows\\System32\\cmd.exe",
         "The previous working configuration",
         "stop-manual-winws2.ps1",
+        "Run strategy tests",
+        "test-strategies.ps1",
+        "choice.exe /C 12345670",
+        "choice.exe /C 1234567890",
+        "EncodedCommand",
+        "Convert]::ToBase64String",
     ]:
         require(service, token, "service.bat")
+    if "set /p" in service.lower():
+        fail("elevated service.bat не должен разбирать произвольный пользовательский ввод через set /p")
+    if 'if "%menu_choice%"' in service or 'if "%profile_choice%"' in service:
+        fail("elevated menu input must not be expanded as CMD source")
+    for number, profile in {
+        1: "profiles\\general.txt",
+        2: "profiles\\general-alt.txt",
+        3: "profiles\\youtube.txt",
+        4: "profiles\\discord.txt",
+        5: "profiles\\general-simple-fake.txt",
+        6: "profiles\\general-multisplit.txt",
+        7: "profiles\\general-fake-multisplit.txt",
+        8: "profiles\\general-hostfakesplit.txt",
+        9: "profiles\\general-fake-tls-auto.txt",
+    }.items():
+        require(service, f"if errorlevel {number} goto profile_{number}", "profile menu")
+        require(service, f':profile_{number}', "profile menu")
+        require(service, f'set "PROFILE_REL={profile}"', "profile menu")
+    if 'if errorlevel 3 set "PROFILE_REL=' in service:
+        fail("profile choice must branch before assigning because if errorlevel is cumulative")
+
+    if not STRATEGY_TEST.is_file():
+        fail("отсутствует tools/test-strategies.ps1")
+    strategy_test = STRATEGY_TEST.read_text(encoding="utf-8-sig")
+    for token in [
+        "Get-ChildItem",
+        "general*.txt",
+        "--dry-run",
+        "parameters verified",
+        "curl.exe",
+        "TLS1.2",
+        "TLS1.3",
+        "Transport observations",
+        "test results",
+        "Stop-TestEngine -Process",
+        "Get-CimInstance Win32_Process",
+        "Close manual winws2.exe before testing",
+        "Get-Service -Name 'winws2'",
+        "SelfTest",
+        "not proof of bypass or universal effectiveness",
+        "Local\\zapret2-youtube-discord-strategy-tests",
+        "[guid]::NewGuid()",
+        "strategy-test-$PID.txt",
+        "capture is started",
+        "runtime did not report capture readiness",
+        "[void]$Process.WaitForExit(3000)",
+        "$ErrorActionPreference = 'Continue'",
+        "Strategy test failed:",
+        "function Exit-WithMessage",
+        "[void][Console]::ReadKey($true)",
+        "Exit-WithMessage '[ERROR] Strategy tests are already running.'",
+        "ZAPRET2 STRATEGY TEST REPORT",
+        "TRANSPORT SUMMARY",
+        "DETAILED RESULTS",
+        "MAXIMUM TRANSPORT SCORE",
+        "Score       : {0}",
+        "Set-Content -LiteralPath $resultFile -Value $reportLines",
+        "$runAborted = $true",
+        "RUN STATUS: ABORTED",
+        "NO TRANSPORT CHECKS CONFIGURED",
+        "$detailScore = if ($item.Score -lt 0) { 'n/a' }",
+        "Release-TestMutex",
+        "if ($Process -and $Process.HasExited)",
+        "Stop-TestEngine -Process $process",
+    ]:
+        require(strategy_test, token, "tools/test-strategies.ps1")
+    if "general*.bat" in strategy_test:
+        fail("тест должен запускать Zapret2 TXT-профили напрямую, а не разбирать BAT")
+    for forbidden in ["Best strategy", "Highest transport-check score", "expected at least 23 profiles"]:
+        if forbidden.lower() in strategy_test.lower():
+            fail(f"strategy test содержит вводящее в заблуждение утверждение: {forbidden}")
+    if "ConvertTo-Json -Depth 6 | Set-Content" in strategy_test:
+        fail("TXT-отчёт не должен быть необработанным JSON-дампом")
     if "EnableDelayedExpansion" in service:
         fail("service.bat искажает пути с символом !")
     if "taskkill /IM winws2.exe" in service:
@@ -49,6 +129,7 @@ def main() -> int:
         "$serviceName = 'winws2'",
         "$legacyServiceName = 'zapret2-youtube-discord'",
         "Get-ImageExecutable",
+        "Get-ServiceConfigPath",
         "OrdinalIgnoreCase",
         "Wait-ServiceState $serviceName 'Running'",
         "Wait-ServiceState $serviceName 'Absent'",
@@ -67,10 +148,22 @@ def main() -> int:
         "New-Service",
         "Start-Service",
         "Stop-Service",
+        "$actualConfig.Equals($activeFull",
+        "Unexpected service was preserved during rollback",
+        "Global\\zapret2-youtube-discord-service-control",
+        "Service manager is already running",
+        "Assert-ServiceStillOwned",
+        "Assert-LegacyStillOwned",
     ]:
         require(control, token, "service-control.ps1")
     if "IndexOf($exe" in control or "findstr" in control.lower():
         fail("ownership должен сравнивать разобранный executable целиком")
+    if control.count("Assert-ServiceStillOwned") < 7:
+        fail("ownership должен перепроверяться непосредственно перед stop/delete/config")
+    if control.count("Assert-LegacyStillOwned") < 3:
+        fail("legacy ownership должен перепроверяться непосредственно перед stop/delete")
+    if "echo Profile not found: %PROFILE_PATH%" in service:
+        fail("elevated BAT не должен интерпретировать путь как часть команды echo")
     if "Remove-LegacyIfOwned" not in control or "$expectedScript" not in control:
         fail("legacy service удаляется без проверки владельца")
     if "IndexOf($expectedScript" in control or ".Contains($expectedScript" in control:
@@ -79,7 +172,7 @@ def main() -> int:
         require(control, token, "legacy ownership")
     for token in ["C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "$hostPath.Equals($trustedHost", "$actualProfile.StartsWith($profileRoot"]:
         require(control, token, "exact legacy ownership")
-    for token in ["'Disabled' { 'disabled' }", "Rollback incomplete", "legacy cleanup failed", "$LASTEXITCODE -eq 0", "$installError", "Failed to update service description"]:
+    for token in ["'Disabled' { 'disabled' }", "Rollback incomplete", "legacy cleanup failed", "$LASTEXITCODE -ne 0", "$installError", "Failed to update service description"]:
         require(control, token, "transaction rollback")
 
     prepare = PREPARE.read_text(encoding="utf-8-sig")

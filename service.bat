@@ -18,7 +18,7 @@ if not exist "%POWERSHELL%" (
 if errorlevel 1 (
     echo Requesting administrator rights...
     set "ZAPRET_SERVICE_SCRIPT=%~f0"
-    "%POWERSHELL%" -NoProfile -Command "Start-Process -FilePath $env:COMSPEC_TRUSTED -ArgumentList @('/d','/c',(('^"{0}^" admin') -f $env:ZAPRET_SERVICE_SCRIPT)) -WorkingDirectory (Split-Path -LiteralPath $env:ZAPRET_SERVICE_SCRIPT) -Verb RunAs"
+    "%POWERSHELL%" -NoProfile -Command "$command = 'Start-Process -FilePath $env:COMSPEC_TRUSTED -ArgumentList @(''/d'',''/c'',(''""{0}"" admin'' -f $env:ZAPRET_SERVICE_SCRIPT)) -WorkingDirectory (Split-Path -LiteralPath $env:ZAPRET_SERVICE_SCRIPT) -Verb RunAs'; $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command)); & $env:POWERSHELL -NoProfile -EncodedCommand $encoded"
     exit /b
 )
 
@@ -46,17 +46,19 @@ echo      3. Start service
 echo      4. Stop service
 echo      5. Check status
 echo      6. Stop manual winws2.exe from this bundle
+echo      7. Run strategy tests
 echo      0. Exit
 echo.
-set "menu_choice="
-set /p "menu_choice=   Select option (0-6): "
-if "%menu_choice%"=="1" goto service_install
-if "%menu_choice%"=="2" goto service_remove
-if "%menu_choice%"=="3" goto service_start
-if "%menu_choice%"=="4" goto service_stop
-if "%menu_choice%"=="5" goto service_status
-if "%menu_choice%"=="6" goto stop_manual
-if "%menu_choice%"=="0" exit /b 0
+echo    Select option (0-7):
+choice.exe /C 12345670 /N
+if errorlevel 8 exit /b 0
+if errorlevel 7 goto run_tests
+if errorlevel 6 goto stop_manual
+if errorlevel 5 goto service_status
+if errorlevel 4 goto service_stop
+if errorlevel 3 goto service_start
+if errorlevel 2 goto service_remove
+if errorlevel 1 goto service_install
 goto menu
 
 :service_install
@@ -73,18 +75,48 @@ echo   7. Fake + Multisplit
 echo   8. HostFakeSplit
 echo   9. Fake TLS Auto
 echo   0. Back
-set "profile_choice="
-set /p "profile_choice=Profile: "
-if "%profile_choice%"=="1" set "PROFILE_REL=profiles\general.txt"
-if "%profile_choice%"=="2" set "PROFILE_REL=profiles\general-alt.txt"
-if "%profile_choice%"=="3" set "PROFILE_REL=profiles\youtube.txt"
-if "%profile_choice%"=="4" set "PROFILE_REL=profiles\discord.txt"
-if "%profile_choice%"=="5" set "PROFILE_REL=profiles\general-simple-fake.txt"
-if "%profile_choice%"=="6" set "PROFILE_REL=profiles\general-multisplit.txt"
-if "%profile_choice%"=="7" set "PROFILE_REL=profiles\general-fake-multisplit.txt"
-if "%profile_choice%"=="8" set "PROFILE_REL=profiles\general-hostfakesplit.txt"
-if "%profile_choice%"=="9" set "PROFILE_REL=profiles\general-fake-tls-auto.txt"
-if "%profile_choice%"=="0" goto menu
+echo Profile:
+choice.exe /C 1234567890 /N
+if errorlevel 10 goto menu
+if errorlevel 9 goto profile_9
+if errorlevel 8 goto profile_8
+if errorlevel 7 goto profile_7
+if errorlevel 6 goto profile_6
+if errorlevel 5 goto profile_5
+if errorlevel 4 goto profile_4
+if errorlevel 3 goto profile_3
+if errorlevel 2 goto profile_2
+if errorlevel 1 goto profile_1
+goto menu
+
+:profile_1
+set "PROFILE_REL=profiles\general.txt"
+goto profile_selected
+:profile_2
+set "PROFILE_REL=profiles\general-alt.txt"
+goto profile_selected
+:profile_3
+set "PROFILE_REL=profiles\youtube.txt"
+goto profile_selected
+:profile_4
+set "PROFILE_REL=profiles\discord.txt"
+goto profile_selected
+:profile_5
+set "PROFILE_REL=profiles\general-simple-fake.txt"
+goto profile_selected
+:profile_6
+set "PROFILE_REL=profiles\general-multisplit.txt"
+goto profile_selected
+:profile_7
+set "PROFILE_REL=profiles\general-fake-multisplit.txt"
+goto profile_selected
+:profile_8
+set "PROFILE_REL=profiles\general-hostfakesplit.txt"
+goto profile_selected
+:profile_9
+set "PROFILE_REL=profiles\general-fake-tls-auto.txt"
+
+:profile_selected
 if not defined PROFILE_REL (
     echo Invalid profile selection.
     pause
@@ -92,7 +124,7 @@ if not defined PROFILE_REL (
 )
 set "PROFILE_PATH=%~dp0%PROFILE_REL%"
 if not exist "%PROFILE_PATH%" (
-    echo Profile not found: %PROFILE_PATH%
+    echo Profile not found.
     pause
     goto menu
 )
@@ -133,6 +165,24 @@ if "%STOPPED_MANUAL%"=="0" (echo No manual winws2.exe from this bundle is runnin
 pause
 goto menu
 
+:run_tests
+cls
+if not exist "%~dp0tools\test-strategies.ps1" (
+    echo [ERROR] tools\test-strategies.ps1 not found.
+    pause
+    goto menu
+)
+where curl.exe >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] curl.exe is required for strategy tests.
+    pause
+    goto menu
+)
+echo Starting Zapret2 strategy tests in a separate PowerShell window...
+start "Zapret2 strategy tests" "%POWERSHELL%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\test-strategies.ps1"
+pause
+goto menu
+
 :check_extracted
 if not exist "%~dp0bin\winws2.exe" (
     echo Zapret2 must be extracted first: bin\winws2.exe not found.
@@ -146,6 +196,11 @@ if not exist "%~dp0profiles\" (
 )
 if not exist "%~dp0tools\service-control.ps1" (
     echo tools\service-control.ps1 not found.
+    pause
+    exit /b 1
+)
+if not exist "%~dp0tools\test-strategies.ps1" (
+    echo tools\test-strategies.ps1 not found.
     pause
     exit /b 1
 )

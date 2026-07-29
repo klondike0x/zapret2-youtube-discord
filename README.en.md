@@ -72,6 +72,8 @@ GPG proves origin and integrity, not that software is harmless. A VirusTotal rep
 
 When a GitHub Release is published, `.github/workflows/release-security.yml` downloads the exact ZIP asset back from GitHub, verifies its SHA-256, GPG signature, CRC, and CRLF line endings, submits that same file to VirusTotal, waits for analysis, and appends the report to the Release notes. `VT_API_KEY` is stored only in GitHub Actions Secrets.
 
+The project is also published in [goshkow's Zapret Hub Marketplace](https://goshkow.com/zapret-hub/marketplace/projects/https_github_com_klondike0x_zapret2_youtube_discor). Its listing has `published` status and passed the marketplace moderation process. This is an additional independent publication check, not a replacement for the exact release SHA-256, GPG signature, or VirusTotal report.
+
 The `v1.0.0` asset was mistakenly packaged as TAR under a `.zip` extension. The `v1.0.1` ZIP contained LF line endings in Windows scripts and profiles. Both have been superseded by `v1.0.2`.
 
 ## Reproducing the ZIP
@@ -93,7 +95,7 @@ User-maintained domain and IP lists are under `lists/`. Add one domain, IP addre
 
 ## Service mode
 
-Run `service.bat` as administrator to install a selected profile as the `winws2` Windows service, shown as `zapret2 YouTube Discord`, start or stop it, inspect its status, or remove it. Stop the service before launching a profile manually.
+Run `service.bat` as administrator to install a selected profile as the `winws2` Windows service, shown as `zapret2 YouTube Discord`, start or stop it, inspect its status, remove it, or run strategy tests. The test option validates each profile with the real `winws2.exe`, starts profiles one at a time, and checks Discord and YouTube over HTTP, TLS 1.2, and TLS 1.3. Results are saved under `tools/test results/`. Stop the service and close manually launched profiles before testing. The score is network-specific comparison data, not a guarantee that one strategy is universally best.
 
 ## Validation
 

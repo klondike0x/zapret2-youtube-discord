@@ -13,11 +13,14 @@ $displayName = 'zapret2 YouTube Discord'
 $root = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).TrimEnd('\')
 $exe = [IO.Path]::GetFullPath((Join-Path $root 'bin\winws2.exe'))
 $active = Join-Path $PSScriptRoot 'service-active.txt'
+$activeFull = [IO.Path]::GetFullPath($active)
 $next = Join-Path $PSScriptRoot 'service-next.txt'
 $backup = Join-Path $PSScriptRoot 'service-backup.txt'
 $prepare = Join-Path $PSScriptRoot 'prepare-service-profile.ps1'
 $sc = 'C:\Windows\System32\sc.exe'
 if (-not (Test-Path -LiteralPath $sc -PathType Leaf)) { throw "Trusted service controller not found: $sc" }
+$controlMutex = [Threading.Mutex]::new($false, 'Global\zapret2-youtube-discord-service-control')
+if (-not $controlMutex.WaitOne(0)) { throw 'Service manager is already running.' }
 
 function Get-ServiceRecord([string]$Name) {
     Get-CimInstance Win32_Service -Filter "Name='$Name'" -ErrorAction SilentlyContinue
@@ -36,12 +39,29 @@ function Get-ImageExecutable([string]$ImagePath) {
     return [IO.Path]::GetFullPath($value)
 }
 
+function Get-ServiceConfigPath([string]$ImagePath) {
+    if (-not $ImagePath) { return $null }
+    $expanded = [Environment]::ExpandEnvironmentVariables($ImagePath).Trim()
+    $match = [Regex]::Match($expanded, '^\s*"[^"]+"\s+@"([^"]+)"\s*$')
+    if (-not $match.Success) { return $null }
+    try { return [IO.Path]::GetFullPath($match.Groups[1].Value) } catch { return $null }
+}
+
 function Assert-CurrentOwner([object]$Service) {
     if (-not $Service) { return }
     $actual = Get-ImageExecutable $Service.PathName
-    if (-not $actual -or -not $actual.Equals($exe, [StringComparison]::OrdinalIgnoreCase)) {
+    $actualConfig = Get-ServiceConfigPath $Service.PathName
+    if (-not $actual -or -not $actual.Equals($exe, [StringComparison]::OrdinalIgnoreCase) -or
+        -not $actualConfig -or -not $actualConfig.Equals($activeFull, [StringComparison]::OrdinalIgnoreCase)) {
         throw "Refusing to manage winws2 owned by another installation: $($Service.PathName)"
     }
+}
+
+function Assert-ServiceStillOwned {
+    $current = Get-ServiceRecord $serviceName
+    if (-not $current) { throw "Service $serviceName disappeared during the operation." }
+    Assert-CurrentOwner $current
+    return $current
 }
 
 function Wait-ServiceState([string]$Name, [string]$State, [int]$Seconds = 15) {
@@ -68,7 +88,7 @@ function Find-ServiceRecord([string]$Name, [int]$Seconds = 3) {
 
 function Stop-CurrentService([object]$Service) {
     if (-not $Service -or $Service.State -eq 'Stopped') { return }
-    Assert-CurrentOwner $Service
+    $Service = Assert-ServiceStillOwned
     Stop-Service -Name $serviceName -Force
     Wait-ServiceState $serviceName 'Stopped'
 }
@@ -91,6 +111,15 @@ function Test-LegacyOwner([object]$Legacy) {
         $actualProfile.StartsWith($profileRoot, [StringComparison]::OrdinalIgnoreCase)
 }
 
+function Assert-LegacyStillOwned {
+    $legacy = Get-ServiceRecord $legacyServiceName
+    if (-not $legacy) { throw "Legacy service $legacyServiceName disappeared during the operation." }
+    if (-not (Test-LegacyOwner $legacy)) {
+        throw "Legacy service $legacyServiceName changed ownership during the operation."
+    }
+    return $legacy
+}
+
 function Remove-LegacyIfOwned {
     $legacy = Get-ServiceRecord $legacyServiceName
     if (-not $legacy) { return }
@@ -99,9 +128,11 @@ function Remove-LegacyIfOwned {
         return
     }
     if ($legacy.State -ne 'Stopped') {
+        $legacy = Assert-LegacyStillOwned
         Stop-Service -Name $legacyServiceName -Force
         Wait-ServiceState $legacyServiceName 'Stopped'
     }
+    [void](Assert-LegacyStillOwned)
     & $sc delete $legacyServiceName | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Failed to delete legacy service $legacyServiceName" }
     Wait-ServiceState $legacyServiceName 'Absent'
@@ -135,6 +166,7 @@ function Install-Profile {
             $created = $true
         } else {
             $updatedExisting = $true
+            [void](Assert-ServiceStillOwned)
             & $sc config $serviceName binPath= $binaryPath start= auto | Out-Null
             if ($LASTEXITCODE -ne 0) { throw 'Failed to update service configuration.' }
         }
@@ -151,22 +183,25 @@ function Install-Profile {
         if (-not $existing -and -not $created) {
             $unexpected = Find-ServiceRecord $serviceName
             if ($unexpected) {
-                Assert-CurrentOwner $unexpected
-                $created = $true
+                try {
+                    Assert-CurrentOwner $unexpected
+                    $created = $true
+                } catch {
+                    Write-Warning "Unexpected service was preserved during rollback: $($_.Exception.Message)"
+                }
             }
         }
         if ($created) {
-            Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
-            & $sc delete $serviceName | Out-Null
-            if ($LASTEXITCODE -eq 0) {
-                try {
-                    Wait-ServiceState $serviceName 'Absent' 10
-                    $createdRemoved = $true
-                } catch {
-                    Write-Warning "The new service is pending deletion: $_"
-                }
-            } else {
-                Write-Warning 'Rollback failed to delete the newly created service; its profile was preserved.'
+            try {
+                [void](Assert-ServiceStillOwned)
+                Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+                [void](Assert-ServiceStillOwned)
+                & $sc delete $serviceName | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw 'Rollback failed to delete the newly created service.' }
+                Wait-ServiceState $serviceName 'Absent' 10
+                $createdRemoved = $true
+            } catch {
+                Write-Warning "New service was preserved because safe rollback could not confirm ownership: $_"
             }
         }
         if (-not $existing -and -not $created) {
@@ -186,17 +221,21 @@ function Install-Profile {
                 }
             } catch { $rollbackErrors.Add("profile: $_") }
             try {
+                [void](Assert-ServiceStillOwned)
                 if ($updatedExisting) {
                     $restoreStart = switch ($previousStartMode) { 'Auto' { 'auto' } 'Disabled' { 'disabled' } default { 'demand' } }
+                    [void](Assert-ServiceStillOwned)
                     & $sc config $serviceName binPath= $previousBinaryPath start= $restoreStart | Out-Null
                     if ($LASTEXITCODE -ne 0) { throw 'Failed to restore service configuration.' }
                 }
+                [void](Assert-ServiceStillOwned)
                 if ($null -ne $previousProfile) {
                     New-ItemProperty -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\$serviceName" -Name Profile -PropertyType String -Value $previousProfile -Force | Out-Null
                 } else {
                     Remove-ItemProperty -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\$serviceName" -Name Profile -ErrorAction SilentlyContinue
                 }
                 if ($previousWasRunning) {
+                    [void](Assert-ServiceStillOwned)
                     Start-Service -Name $serviceName
                     Wait-ServiceState $serviceName 'Running'
                 }
@@ -222,6 +261,7 @@ switch ($Action) {
         Assert-CurrentOwner $service
         if ($service) {
             Stop-CurrentService $service
+            [void](Assert-ServiceStillOwned)
             & $sc delete $serviceName | Out-Null
             if ($LASTEXITCODE -ne 0) { throw 'Failed to delete service.' }
             Wait-ServiceState $serviceName 'Absent'
