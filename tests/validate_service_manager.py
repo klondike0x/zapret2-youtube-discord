@@ -169,6 +169,9 @@ def main() -> int:
         fail("legacy ownership должен перепроверяться непосредственно перед stop/delete")
     if "echo Profile not found: %PROFILE_PATH%" in service:
         fail("elevated BAT не должен интерпретировать путь как часть команды echo")
+    if "process(es)." in service:
+        fail("CMD block must not contain an unescaped closing parenthesis in status text")
+    require(service, "manual winws2.exe processes.", "manual process status")
     if "Remove-LegacyIfOwned" not in control or "$expectedScript" not in control:
         fail("legacy service удаляется без проверки владельца")
     if "IndexOf($expectedScript" in control or ".Contains($expectedScript" in control:
