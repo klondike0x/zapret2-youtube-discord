@@ -179,6 +179,69 @@ function Stop-TestEngines {
     }
 }
 
+function Get-ServiceStatus {
+    $service = Get-ServiceRecord $serviceName
+    $wdf = Get-ServiceRecord 'WinDivert'
+
+    $serviceOk = [bool]($service -and $service.State -eq 'Running')
+    $wdfOk = [bool]($wdf -and $wdf.State -eq 'Running')
+    $bypassOk = $false
+    $bypassDetail = ''
+
+    if (-not (Get-Command curl.exe -ErrorAction SilentlyContinue)) {
+        $bypassDetail = 'curl not found'
+    } elseif ($serviceOk) {
+        try {
+            $previousErrorAction = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            $curlResult = & curl.exe -I -sS -m 3 https://discord.com 2>$null
+            $curlExit = $LASTEXITCODE
+            $ErrorActionPreference = $previousErrorAction
+            $match = [Regex]::Match($curlResult, '^HTTP/\S+\s+(\d+)')
+            $statusCode = if ($match.Success) { [int]$match.Groups[1].Value } else { 0 }
+            if ($statusCode -in @(200, 301, 302)) {
+                $bypassOk = $true
+                $bypassDetail = "HTTP $statusCode"
+            } elseif ($curlExit -eq 0) {
+                $bypassDetail = "HTTP $statusCode"
+            } else {
+                $bypassDetail = "curl exit $curlExit"
+            }
+        } catch {
+            $bypassDetail = 'no network'
+        }
+    } else {
+        $bypassDetail = 'service stopped'
+    }
+
+    Write-Host ''
+    Write-Host '  SERVICE  STATUS' -ForegroundColor Cyan
+    Write-Host '  ---------------------'
+    $serviceLabel = if ($service) { $service.State } else { 'NOT INSTALLED' }
+    $serviceColor = if ($serviceOk) { 'Green' } elseif ($service) { 'Red' } else { 'Yellow' }
+    Write-Host ('  winws2        ' + $serviceLabel) -ForegroundColor $serviceColor
+
+    $wdfLabel = if ($wdf) { $wdf.State } else { 'NOT INSTALLED' }
+    $wdfColor = if ($wdfOk) { 'Green' } elseif ($wdf) { 'Red' } else { 'Yellow' }
+    Write-Host ('  WinDivert     ' + $wdfLabel) -ForegroundColor $wdfColor
+
+    $bypassLabel = if ($bypassOk) { 'ACTIVE' } else { "INACTIVE ($bypassDetail)" }
+    $bypassColor = if ($bypassOk) { 'Green' } else { 'Red' }
+    Write-Host ('  Bypass        ' + $bypassLabel) -ForegroundColor $bypassColor
+
+    if ($wdfOk -and -not $serviceOk) {
+        Write-Host '  [!] WinDivert is active but winws2 service is stopped.' -ForegroundColor Yellow
+    }
+
+    if ($service) {
+        $profile = (Get-ItemProperty -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\$serviceName" -Name Profile -ErrorAction SilentlyContinue).Profile
+        Write-Host ''
+        Write-Host "  Profile:  $profile" -ForegroundColor Gray
+        Write-Host "  PID:      $($service.ProcessId)" -ForegroundColor Gray
+    }
+    Write-Host ''
+}
+
 function Install-Profile {
     if (-not $ProfilePath -or -not $ProfileRelative) { throw 'ProfilePath and ProfileRelative are required.' }
     $existing = Get-ServiceRecord $serviceName
@@ -350,16 +413,6 @@ switch ($Action) {
         Write-Output 'Service is stopped.'
     }
     'Status' {
-        $service = Get-ServiceRecord $serviceName
-        if (-not $service) {
-            Write-Output 'Service winws2 is not installed.'
-        } else {
-            Assert-CurrentOwner $service
-            $profile = (Get-ItemProperty -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\$serviceName" -Name Profile -ErrorAction SilentlyContinue).Profile
-            Write-Output "State: $($service.State)"
-            Write-Output "PID: $($service.ProcessId)"
-            Write-Output "Profile: $profile"
-            Write-Output "ImagePath: $($service.PathName)"
-        }
+        Get-ServiceStatus
     }
 }
