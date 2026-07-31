@@ -27,7 +27,7 @@ def require(text: str, token: str, label: str) -> None:
 
 def main() -> int:
     service = SERVICE.read_text(encoding="utf-8-sig")
-    require(service, 'set "LOCAL_VERSION=1.0.4"', "service manager version")
+    require(service, 'set "LOCAL_VERSION=1.0.5"', "service manager version")
     if 'set "LOCAL_VERSION=2.0.2"' in service:
         fail("service.bat не должен показывать версию стороннего service manager")
     for token in [
