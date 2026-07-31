@@ -30,16 +30,17 @@ GPG fingerprint релизов: `4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31
 
 Каждый отчёт VirusTotal относится **только к конкретному файлу с конкретным SHA-256**. Если архив был пересобран или изменён хотя бы на один байт, старый отчёт к нему больше не относится.
 
-[![VirusTotal](https://img.shields.io/badge/VirusTotal-отчёт_v1.0.3-394EFF?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-отчёт_v1.0.4-394EFF?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/file/2050ce15779b3595cec7320e664fa66f4ba517e978df6bd97b040803cda38535)
 
 | Версия | Файл | SHA-256 | VirusTotal |
 | --- | --- | --- | --- |
+| v1.0.4 | `zapret2-youtube-discord-v1.0.4.zip` | `2050ce15779b3595cec7320e664fa66f4ba517e978df6bd97b040803cda38535` | [Открыть отчёт](https://www.virustotal.com/gui/file/2050ce15779b3595cec7320e664fa66f4ba517e978df6bd97b040803cda38535) |
 | v1.0.3 | `zapret2-youtube-discord-v1.0.3.zip` | `b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b` | [Открыть отчёт](https://www.virustotal.com/gui/file/b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b) |
 
 SHA-256 выше получен непосредственно из метаданных GitHub Release asset. Перед запуском рекомендуется сравнить хеш скачанного архива:
 
 ```powershell
-Get-FileHash .\zapret2-youtube-discord-v1.0.3.zip -Algorithm SHA256
+Get-FileHash .\zapret2-youtube-discord-v1.0.4.zip -Algorithm SHA256
 ```
 
 Проверка GPG-подписи опубликованного манифеста:
@@ -71,7 +72,7 @@ python tools/generate_virustotal_table.py dist/<архив> --version vX.Y.Z
 Portable ZIP собирается из файлов конкретного Git-коммита, а не из произвольного содержимого рабочей папки:
 
 ```bash
-python tools/build_release_zip.py --version v1.0.3 --revision v1.0.3 --output-dir dist
+python tools/build_release_zip.py --version v1.0.4 --revision v1.0.4 --output-dir dist
 python tests/validate_release_zip.py
 ```
 

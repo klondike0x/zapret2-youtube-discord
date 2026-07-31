@@ -26,8 +26,8 @@ def main() -> int:
         "github/v/release/klondike0x/zapret2-youtube-discord",
         "github/downloads/klondike0x/zapret2-youtube-discord/total",
         "b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b",
-        "https://www.virustotal.com/gui/file/b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b",
-        "v1.0.3",
+        "2050ce15779b3595cec7320e664fa66f4ba517e978df6bd97b040803cda38535",
+        "v1.0.4",
         "goshkow.com/zapret-hub/marketplace/projects/https_github_com_klondike0x_zapret2_youtube_discor",
         "Zapret Hub Marketplace",
     ]:
@@ -39,6 +39,7 @@ def main() -> int:
         "README.md",
         "winws2.exe v1.0.3",
         "v1.0.3",
+        "v1.0.4",
         "4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31AE",
         "VirusTotal",
         "NOTICE",
