@@ -194,12 +194,18 @@ def main() -> int:
         "Assert-LegacyStillOwned",
         "Remove-WinDivertDriver",
         "Stop-TestEngines",
+        "Get-ServiceStatus",
         "sc stop WinDivert",
         "sc delete WinDivert",
         "Failed to stop WinDivert driver",
         "WinDivert driver was not fully removed",
         "This service was installed from another folder",
         "Service winws2 is not installed.",
+        "SERVICE  STATUS",
+        "Write-Host",
+        "Bypass        ",
+        "INACTIVE",
+        "ACTIVE",
     ]:
         require(control, token, "service-control.ps1")
     if "IndexOf($exe" in control or "findstr" in control.lower():
