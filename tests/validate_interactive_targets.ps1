@@ -39,6 +39,11 @@ try {
 
     $safeName = ConvertTo-SafeTargetName ' My custom-target! '
     Assert-True ($safeName -eq 'My_custom_target') "Unsafe target name normalization: $safeName"
+    $invalidNameRejected = $false
+    try { [void](ConvertTo-SafeTargetName '!!!') } catch { $invalidNameRejected = $true }
+    Assert-True $invalidNameRejected 'A completely invalid target name was accepted'
+    $legacyName = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    Assert-True ((ConvertTo-SafeTargetName $legacyName) -eq $legacyName) 'A legacy-safe long target name was truncated'
 
     $urlTarget = ConvertTo-StrategyTarget -Name 'Custom Web' -Value 'https://example.com/path?q=1'
     Assert-True ($urlTarget.Name -eq 'Custom_Web') 'URL target name was not normalized'

@@ -10,8 +10,6 @@ function ConvertTo-SafeTargetName {
 
     $safe = [Regex]::Replace($Name.Trim(), '[^A-Za-z0-9_]+', '_').Trim('_')
     if (-not $safe) { throw 'Target name must contain a letter or number.' }
-    if ($safe.Length -gt 48) { $safe = $safe.Substring(0, 48).TrimEnd('_') }
-    if (-not $safe) { throw 'Target name is invalid.' }
     $safe
 }
 
