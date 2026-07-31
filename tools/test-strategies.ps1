@@ -246,10 +246,16 @@ if ((Get-RunningWinws2).Count -gt 0) {
 $selected = @(Read-ProfileSelection -Profiles $profiles)
 try {
     $targets = @(Select-StrategyTargets -Path $targetsFile)
-} catch {
-    Exit-WithMessage ("[ERROR] Unable to configure test targets: {0}" -f $_.Exception.Message)
-}
-New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
+    } catch {
+        Exit-WithMessage ("[ERROR] Unable to configure test targets: {0}" -f $_.Exception.Message)
+    }
+    if ($targets.Count -eq 0) {
+        Write-Host '[ERROR] No targets selected. Test cancelled.' -ForegroundColor Red
+        Write-Host 'Press any key to close...'
+        [void][Console]::ReadKey($true)
+        exit 1
+    }
+    New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
 $global = @()
 $proc = $null
 $runAborted = $false

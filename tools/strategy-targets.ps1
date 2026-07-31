@@ -137,11 +137,22 @@ function Read-NewStrategyTargets {
         [array]$InitialTargets = @()
     )
 
+    Write-Host 'Enter target name and URL/hostname one at a time.' -ForegroundColor Gray
+    Write-Host 'Leave the name blank or type 0 to finish.' -ForegroundColor Gray
+
     $targets = @($InitialTargets)
     while ($true) {
-        $name = (& $ReadInput 'Target name (blank to finish)').Trim()
-        if (-not $name) { break }
-        $value = (& $ReadInput 'Full http(s) URL or PING:hostname').Trim()
+        $rawName = & $ReadInput 'Target name (blank or 0 to finish)'
+        if ($null -eq $rawName) { $rawName = '' }
+        $name = $rawName.Trim()
+        if (-not $name -or $name -eq '0' -or $name -eq 'exit') { break }
+        $rawValue = & $ReadInput 'Full http(s) URL or PING:hostname'
+        if ($null -eq $rawValue) { $rawValue = '' }
+        $value = $rawValue.Trim()
+        if (-not $value) {
+            Write-Host 'Value cannot be empty. Skipping this target.' -ForegroundColor Yellow
+            continue
+        }
         try {
             $newTarget = ConvertTo-StrategyTarget -Name $name -Value $value
             $targets = @($targets | Where-Object { -not $_.Name.Equals($newTarget.Name, [StringComparison]::OrdinalIgnoreCase) }) + @($newTarget)
@@ -191,7 +202,11 @@ function Select-StrategyTargets {
         if ($choice -eq '1') { return @(Complete-StrategyTargetSelection -Targets @(Get-DefaultStrategyTargets)) }
         if ($choice -eq '2') {
             $temporary = @(Read-NewStrategyTargets -ReadInput $ReadInput -InitialTargets @(Get-DefaultStrategyTargets))
-            if ($temporary.Count -gt 0) { return @(Complete-StrategyTargetSelection -Targets $temporary) }
+            if ($temporary.Count -eq 0) {
+                Write-Host 'No targets added. Test cancelled.' -ForegroundColor Yellow
+                return @()
+            }
+            return @(Complete-StrategyTargetSelection -Targets $temporary)
         } elseif ($choice -eq '3') {
             if ($saved.Count -eq 0) { Write-Host 'No saved targets. Add targets first.' -ForegroundColor Yellow; if ($NonInteractive) { throw 'No saved targets.' }; continue }
             Show-StrategyTargets $saved

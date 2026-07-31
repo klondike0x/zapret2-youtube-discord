@@ -125,8 +125,19 @@ def main() -> int:
         "Read-SavedStrategyTargets -Path $targetsFile",
         "Unable to configure test targets",
         "if ($SelfTest) { exit $Code }",
+        "No targets selected. Test cancelled.",
     ]:
         require(strategy_test, token, "tools/test-strategies.ps1")
+
+    targets_lib = TARGETS_LIBRARY.read_text(encoding="utf-8-sig")
+    for token in [
+        "blank or 0 to finish",
+        "No targets added. Test cancelled.",
+        "$null -eq $rawName",
+        "$null -eq $rawValue",
+        "Value cannot be empty. Skipping this target.",
+    ]:
+        require(targets_lib, token, "tools/strategy-targets.ps1")
 
     targets_probe = subprocess.run(
         [
