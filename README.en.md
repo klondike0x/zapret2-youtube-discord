@@ -53,7 +53,6 @@ The corrected `v1.0.3` Windows asset is a genuine ZIP archive with Windows CRLF 
 | Version | Asset | SHA-256 | VirusTotal |
 | --- | --- | --- | --- |
 | v1.0.4 | `zapret2-youtube-discord-v1.0.4.zip` | `2050ce15779b3595cec7320e664fa66f4ba517e978df6bd97b040803cda38535` | [Open report](https://www.virustotal.com/gui/file/2050ce15779b3595cec7320e664fa66f4ba517e978df6bd97b040803cda38535) |
-| v1.0.3 | `zapret2-youtube-discord-v1.0.3.zip` | `b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b` | [Open report](https://www.virustotal.com/gui/file/b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b) |
 
 Check the downloaded file in PowerShell:
 

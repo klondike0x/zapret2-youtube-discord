@@ -35,7 +35,6 @@ GPG fingerprint релизов: `4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31
 | Версия | Файл | SHA-256 | VirusTotal |
 | --- | --- | --- | --- |
 | v1.0.4 | `zapret2-youtube-discord-v1.0.4.zip` | `2050ce15779b3595cec7320e664fa66f4ba517e978df6bd97b040803cda38535` | [Открыть отчёт](https://www.virustotal.com/gui/file/2050ce15779b3595cec7320e664fa66f4ba517e978df6bd97b040803cda38535) |
-| v1.0.3 | `zapret2-youtube-discord-v1.0.3.zip` | `b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b` | [Открыть отчёт](https://www.virustotal.com/gui/file/b5d6ed32f52a96a5ea3542d4da3bc491b9e730cccb87217332f6ae71a1cd048b) |
 
 SHA-256 выше получен непосредственно из метаданных GitHub Release asset. Перед запуском рекомендуется сравнить хеш скачанного архива:
 
