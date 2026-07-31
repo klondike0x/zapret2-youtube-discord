@@ -8,6 +8,9 @@ $profilesDir = Join-Path $root 'profiles'
 $resultsDir = Join-Path $PSScriptRoot 'test results'
 $exe = Join-Path $root 'bin\winws2.exe'
 $targetsFile = Join-Path $PSScriptRoot 'targets.txt'
+$targetsLibrary = Join-Path $PSScriptRoot 'strategy-targets.ps1'
+if (-not (Test-Path -LiteralPath $targetsLibrary)) { throw 'strategy-targets.ps1 missing' }
+. $targetsLibrary
 
 function Exit-WithMessage {
     param(
@@ -16,8 +19,9 @@ function Exit-WithMessage {
         [int]$Code = 1
     )
     Write-Host $Message -ForegroundColor $Color
+    if ($SelfTest) { exit $Code }
     Write-Host 'Press any key to close...' -ForegroundColor Yellow
-    [void][Console]::ReadKey($true)
+    try { [void][Console]::ReadKey($true) } catch {}
     exit $Code
 }
 
@@ -75,33 +79,6 @@ function Read-ProfileSelection {
         }
         Write-Host 'Invalid selection.' -ForegroundColor Yellow
     }
-}
-
-function Get-Targets {
-    $items = @()
-    if (Test-Path -LiteralPath $targetsFile) {
-        foreach ($line in Get-Content -LiteralPath $targetsFile) {
-            if ($line -match '^\s*([A-Za-z0-9_]+)\s*=\s*"([^"]+)"\s*$') {
-                $value = $matches[2]
-                try {
-                    $items += [PSCustomObject]@{
-                        Name = $matches[1]
-                        Url = if ($value -like 'PING:*') { $null } else { $value }
-                        Ping = if ($value -like 'PING:*') { $value.Substring(5) } else { ([Uri]$value).Host }
-                    }
-                } catch {
-                    Write-Warning "Ignoring invalid target '$($matches[1])': $value"
-                }
-            }
-        }
-    }
-    if ($items.Count -eq 0) {
-        $items = @(
-            [PSCustomObject]@{ Name='DiscordMain'; Url='https://discord.com'; Ping='discord.com' },
-            [PSCustomObject]@{ Name='YouTubeWeb'; Url='https://www.youtube.com'; Ping='www.youtube.com' }
-        )
-    }
-    $items
 }
 
 function Stop-TestEngine {
@@ -227,6 +204,8 @@ $profiles = Get-Profiles
 if ($SelfTest) {
     if (-not (Test-Path -LiteralPath $exe)) { throw 'winws2.exe missing' }
     if ($profiles.Count -eq 0) { throw 'no general profiles found' }
+    $selfTestTargets = @(if (Test-Path -LiteralPath $targetsFile) { Read-SavedStrategyTargets -Path $targetsFile } else { Get-DefaultStrategyTargets })
+    if ($selfTestTargets.Count -eq 0) { throw 'no valid strategy targets found' }
     $runningForSelfTest = @(Get-RunningWinws2)
     if ($runningForSelfTest.Count -gt 0) {
         Write-Output "SELFTEST STRUCTURE PASS: $($profiles.Count) Zapret2 profiles; parser dry-run skipped because winws2.exe is already running"
@@ -265,7 +244,11 @@ if ((Get-RunningWinws2).Count -gt 0) {
 }
 
 $selected = @(Read-ProfileSelection -Profiles $profiles)
-$targets = @(Get-Targets)
+try {
+    $targets = @(Select-StrategyTargets -Path $targetsFile)
+} catch {
+    Exit-WithMessage ("[ERROR] Unable to configure test targets: {0}" -f $_.Exception.Message)
+}
 New-Item -ItemType Directory -Path $resultsDir -Force | Out-Null
 $global = @()
 $proc = $null

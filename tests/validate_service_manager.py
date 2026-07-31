@@ -9,6 +9,8 @@ SERVICE = ROOT / "service.bat"
 CONTROL = ROOT / "tools" / "service-control.ps1"
 PREPARE = ROOT / "tools" / "prepare-service-profile.ps1"
 STRATEGY_TEST = ROOT / "tools" / "test-strategies.ps1"
+TARGETS_LIBRARY = ROOT / "tools" / "strategy-targets.ps1"
+TARGETS_TEST = ROOT / "tests" / "validate_interactive_targets.ps1"
 IMAGEPATH_TEST = ROOT / "tests" / "validate_service_imagepath.ps1"
 BUILD_WORKFLOW = ROOT / ".github" / "workflows" / "build-verification.yml"
 PUBLISH_WORKFLOW = ROOT / ".github" / "workflows" / "publish-release.yml"
@@ -73,6 +75,10 @@ def main() -> int:
 
     if not STRATEGY_TEST.is_file():
         fail("отсутствует tools/test-strategies.ps1")
+    if not TARGETS_LIBRARY.is_file():
+        fail("отсутствует tools/strategy-targets.ps1")
+    if not TARGETS_TEST.is_file():
+        fail("отсутствует tests/validate_interactive_targets.ps1")
     strategy_test = STRATEGY_TEST.read_text(encoding="utf-8-sig")
     for token in [
         "Get-ChildItem",
@@ -114,8 +120,32 @@ def main() -> int:
         "Release-TestMutex",
         "if ($Process -and $Process.HasExited)",
         "Stop-TestEngine -Process $process",
+        "strategy-targets.ps1",
+        "Select-StrategyTargets -Path $targetsFile",
+        "Read-SavedStrategyTargets -Path $targetsFile",
+        "Unable to configure test targets",
+        "if ($SelfTest) { exit $Code }",
     ]:
         require(strategy_test, token, "tools/test-strategies.ps1")
+
+    targets_probe = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(TARGETS_TEST),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=60,
+    )
+    if targets_probe.returncode != 0 or "PASS interactive strategy target" not in targets_probe.stdout:
+        fail(f"интерактивные цели теста завершились ошибкой: {(targets_probe.stdout + targets_probe.stderr).strip()}")
     if "general*.bat" in strategy_test:
         fail("тест должен запускать Zapret2 TXT-профили напрямую, а не разбирать BAT")
     for forbidden in ["Best strategy", "Highest transport-check score", "expected at least 23 profiles"]:
