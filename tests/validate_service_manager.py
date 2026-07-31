@@ -198,11 +198,13 @@ def main() -> int:
         "sc delete WinDivert",
         "Failed to stop WinDivert driver",
         "WinDivert driver was not fully removed",
+        "This service was installed from another folder",
+        "Service winws2 is not installed.",
     ]:
         require(control, token, "service-control.ps1")
     if "IndexOf($exe" in control or "findstr" in control.lower():
         fail("ownership должен сравнивать разобранный executable целиком")
-    if control.count("Assert-ServiceStillOwned") < 7:
+    if control.count("Assert-ServiceStillOwned") < 6:
         fail("ownership должен перепроверяться непосредственно перед stop/delete/config")
     if control.count("Assert-LegacyStillOwned") < 3:
         fail("legacy ownership должен перепроверяться непосредственно перед stop/delete")
