@@ -299,14 +299,36 @@ switch ($Action) {
     'Install' { Install-Profile }
     'Remove' {
         $service = Get-ServiceRecord $serviceName
-        Assert-CurrentOwner $service
-        if ($service) {
+        $owned = $false
+        try {
+            Assert-CurrentOwner $service
+            $owned = $true
+        } catch {
+            Write-Warning "This service was installed from another folder and may belong to another Zapret2 installation."
+        }
+        if (-not $service) {
+            Write-Warning 'Service winws2 is not installed.'
+            Remove-WinDivertDriver
+            Stop-TestEngines
+            Remove-Item -LiteralPath $active, $next, $backup -Force -ErrorAction SilentlyContinue
+            Remove-LegacyIfOwned
+            Write-Output 'Cleanup completed.'
+            return
+        }
+        if ($owned) {
             Stop-CurrentService $service
             [void](Assert-ServiceStillOwned)
-            & $sc delete $serviceName | Out-Null
-            if ($LASTEXITCODE -ne 0) { throw 'Failed to delete service.' }
-            Wait-ServiceState $serviceName 'Absent'
+        } else {
+            if ($service.State -ne 'Stopped') {
+                Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+                try { Wait-ServiceState $serviceName 'Stopped' } catch {
+                    Write-Warning "Service $serviceName did not stop cleanly. It may be held by another process."
+                }
+            }
         }
+        & $sc delete $serviceName | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Failed to delete service.' }
+        Wait-ServiceState $serviceName 'Absent'
         Remove-WinDivertDriver
         Stop-TestEngines
         Remove-Item -LiteralPath $active, $next, $backup -Force -ErrorAction SilentlyContinue
