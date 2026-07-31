@@ -141,6 +141,44 @@ function Remove-LegacyIfOwned {
     Wait-ServiceState $legacyServiceName 'Absent'
 }
 
+function Remove-WinDivertDriver {
+    $wdf = Get-ServiceRecord 'WinDivert'
+    if (-not $wdf) { return }
+    try {
+        if ($wdf.State -eq 'Running') {
+            & $sc stop WinDivert | Out-Null
+            Wait-ServiceState 'WinDivert' 'Stopped' 10
+        }
+    } catch {
+        Write-Warning "Failed to stop WinDivert driver. It may be held by another process."
+    }
+    try {
+        & $sc delete WinDivert | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "sc delete WinDivert returned code $LASTEXITCODE" }
+        Wait-ServiceState 'WinDivert' 'Absent' 10
+    } catch {
+        Write-Warning "WinDivert driver was not fully removed: $_"
+    }
+}
+
+function Stop-TestEngines {
+    $bundleExeNormalized = $exe.Replace('\', '\\')
+    try {
+        @(Get-CimInstance Win32_Process -Filter "Name='winws2.exe'" -ErrorAction SilentlyContinue | Where-Object {
+            $_.ExecutablePath -and $_.ExecutablePath.Replace('\', '\\').StartsWith($bundleExeNormalized, [StringComparison]::OrdinalIgnoreCase)
+        }) | ForEach-Object {
+            try {
+                Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+                Write-Warning "Stopped a running winws2.exe (PID $($_.ProcessId)) from this bundle before removing the service."
+            } catch {
+                Write-Warning "Failed to stop winws2.exe PID $($_.ProcessId): $_"
+            }
+        }
+    } catch {
+        Write-Warning "Could not inventory running winws2 processes: $_"
+    }
+}
+
 function Install-Profile {
     if (-not $ProfilePath -or -not $ProfileRelative) { throw 'ProfilePath and ProfileRelative are required.' }
     $existing = Get-ServiceRecord $serviceName
@@ -269,6 +307,8 @@ switch ($Action) {
             if ($LASTEXITCODE -ne 0) { throw 'Failed to delete service.' }
             Wait-ServiceState $serviceName 'Absent'
         }
+        Remove-WinDivertDriver
+        Stop-TestEngines
         Remove-Item -LiteralPath $active, $next, $backup -Force -ErrorAction SilentlyContinue
         Remove-LegacyIfOwned
         Write-Output 'Service removed.'

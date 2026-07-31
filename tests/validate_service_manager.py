@@ -192,6 +192,12 @@ def main() -> int:
         "Service manager is already running",
         "Assert-ServiceStillOwned",
         "Assert-LegacyStillOwned",
+        "Remove-WinDivertDriver",
+        "Stop-TestEngines",
+        "sc stop WinDivert",
+        "sc delete WinDivert",
+        "Failed to stop WinDivert driver",
+        "WinDivert driver was not fully removed",
     ]:
         require(control, token, "service-control.ps1")
     if "IndexOf($exe" in control or "findstr" in control.lower():
