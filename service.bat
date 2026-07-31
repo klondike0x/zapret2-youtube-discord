@@ -1,5 +1,5 @@
 @echo off
-set "LOCAL_VERSION=2.0.2"
+set "LOCAL_VERSION=1.0.4"
 set "SERVICE_CONTROL=%~dp0tools\service-control.ps1"
 set "POWERSHELL=C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 set "COMSPEC_TRUSTED=C:\Windows\System32\cmd.exe"
