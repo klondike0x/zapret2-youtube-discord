@@ -33,6 +33,7 @@ jobs:
           python tests\validate_project.py || exit /b 1
           python tests\validate_service_manager.py || exit /b 1
           powershell -NoProfile -ExecutionPolicy Bypass -File tests\validate_service_imagepath.ps1 || exit /b 1
+          powershell -NoProfile -ExecutionPolicy Bypass -File tests\validate_interactive_targets.ps1 || exit /b 1
           python tests\validate_flowseal_alt_port.py || exit /b 1
           python tests\validate_strategy_variants.py || exit /b 1
           python tests\validate_release_zip.py || exit /b 1

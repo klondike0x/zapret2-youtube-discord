@@ -95,7 +95,7 @@ User-maintained domain and IP lists are under `lists/`. Add one domain, IP addre
 
 ## Service mode
 
-Run `service.bat` as administrator to install a selected profile as the `winws2` Windows service, shown as `zapret2 YouTube Discord`, start or stop it, inspect its status, remove it, or run strategy tests. The test option validates each profile with the real `winws2.exe`, starts profiles one at a time, and checks Discord and YouTube over HTTP, TLS 1.2, and TLS 1.3. Results are saved under `tools/test results/`. Stop the service and close manually launched profiles before testing. The score is network-specific comparison data, not a guarantee that one strategy is universally best.
+Run `service.bat` as administrator to install a selected profile as the `winws2` Windows service, shown as `zapret2 YouTube Discord`, start or stop it, inspect its status, remove it, or run strategy tests. The test option validates each profile with the real `winws2.exe`, starts profiles one at a time, and checks Discord and YouTube over HTTP, TLS 1.2, and TLS 1.3. The console can add a URL or ping host for one run, save custom targets in `tools/targets.txt`, delete them, or restore the defaults. Input is validated and is never executed as a command. Results are saved under `tools/test results/`. Stop the service and close manually launched profiles before testing. The score is network-specific transport evidence, not a guarantee that a profile bypasses every block.
 
 ## Validation
 
