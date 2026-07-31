@@ -161,7 +161,7 @@ goto menu
 cls
 set "STOPPED_MANUAL=0"
 for /f "delims=" %%N in ('"%POWERSHELL%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\stop-manual-winws2.ps1" 2^>nul') do set "STOPPED_MANUAL=%%N"
-if "%STOPPED_MANUAL%"=="0" (echo No manual winws2.exe from this bundle is running.) else (echo Stopped %STOPPED_MANUAL% manual winws2.exe process(es).)
+if "%STOPPED_MANUAL%"=="0" (echo No manual winws2.exe from this bundle is running.) else (echo Stopped %STOPPED_MANUAL% manual winws2.exe processes.)
 pause
 goto menu
 
