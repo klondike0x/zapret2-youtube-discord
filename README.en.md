@@ -52,12 +52,12 @@ The corrected `v1.0.3` Windows asset is a genuine ZIP archive with Windows CRLF 
 
 | Version | Asset | SHA-256 | VirusTotal |
 | --- | --- | --- | --- |
-| v1.0.5 | `zapret2-youtube-discord-v1.0.5.zip` | `a239a4eb5ab195f60166e50f7256654b1a7527d7534e5bdf0d584d2b9de3b8a9` | [Open report](https://www.virustotal.com/gui/file/a239a4eb5ab195f60166e50f7256654b1a7527d7534e5bdf0d584d2b9de3b8a9) |
+| v1.0.6 | `zapret2-youtube-discord-v1.0.6.zip` | `c2547c349dc60be8b99e3d5835037ef1d60b4b48b497e7e891f07f7567afdb23` | [Open report](https://www.virustotal.com/gui/file/c2547c349dc60be8b99e3d5835037ef1d60b4b48b497e7e891f07f7567afdb23) |
 
 Check the downloaded file in PowerShell:
 
 ```powershell
-Get-FileHash .\zapret2-youtube-discord-v1.0.5.zip -Algorithm SHA256
+Get-FileHash .\zapret2-youtube-discord-v1.0.6.zip -Algorithm SHA256
 ```
 
 Verify the signed checksum manifest:
@@ -74,14 +74,14 @@ When a GitHub Release is published, `.github/workflows/release-security.yml` dow
 
 The project is also published in [goshkow's Zapret Hub Marketplace](https://goshkow.com/zapret-hub/marketplace/projects/https_github_com_klondike0x_zapret2_youtube_discor). Its listing has `published` status and passed the marketplace moderation process. This is an additional independent publication check, not a replacement for the exact release SHA-256, GPG signature, or VirusTotal report.
 
-The `v1.0.0` asset was mistakenly packaged as TAR under a `.zip` extension. The `v1.0.1` ZIP contained LF line endings in Windows scripts and profiles. Both have been superseded by `v1.0.5`.
+The `v1.0.0` asset was mistakenly packaged as TAR under a `.zip` extension. The `v1.0.1` ZIP contained LF line endings in Windows scripts and profiles. Both have been superseded by `v1.0.6`.
 
 ## Reproducing the ZIP
 
 The release ZIP builder exports tracked files from a Git revision and writes a deterministic ZIP layout:
 
 ```bash
-python tools/build_release_zip.py --version v1.0.5 --revision v1.0.5 --output-dir dist
+python tools/build_release_zip.py --version v1.0.6 --revision v1.0.6 --output-dir dist
 python tests/validate_release_zip.py
 ```
 
