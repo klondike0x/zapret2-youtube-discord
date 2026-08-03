@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -27,9 +28,18 @@ def require(text: str, token: str, label: str) -> None:
 
 def main() -> int:
     service = SERVICE.read_text(encoding="utf-8-sig")
-    require(service, 'set "LOCAL_VERSION=1.0.5"', "service manager version")
-    if 'set "LOCAL_VERSION=2.0.2"' in service:
-        fail("service.bat не должен показывать версию стороннего service manager")
+    require(service, 'set "LOCAL_VERSION="', "service manager version variable")
+    require(service, "version.txt", "service manager reads version from version.txt")
+    require(service, 'set "LOCAL_VERSION=%%v"', "service manager captures version from file")
+    require(service, 'set "LOCAL_VERSION=unknown"', "service manager fallback to unknown")
+    if re.search(r'set "LOCAL_VERSION=\d+\.\d+', service):
+        fail("service.bat не должен хардкодить версию — используй version.txt")
+    version_file = ROOT / "version.txt"
+    if not version_file.is_file():
+        fail("отсутствует version.txt")
+    ver = version_file.read_text(encoding="utf-8-sig").strip()
+    if not re.match(r'^\d+\.\d+\.\d+$', ver):
+        fail(f"version.txt содержит невалидную версию: {ver}")
     for token in [
         "service-control.ps1",
         "-Action Install",
