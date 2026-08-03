@@ -1,5 +1,6 @@
 MIT License
 
+Copyright (c) 2016-2026 bol-van
 Copyright (c) 2026 klondike0x
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,3 +20,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+This repository bundles binary and source files from bol-van/zapret2
+(https://github.com/bol-van/zapret2). No explicit license is declared in the
+upstream repository. The bundled files are redistributed as-is with full
+attribution to bol-van.
+
+This repository also bundles WinDivert (https://github.com/basil00/WinDivert),
+licensed under your choice of:
+
+1. GNU Lesser General Public License (LGPL) Version 3, or
+2. GNU General Public License (GPL) Version 2.
+
+WinDivert binaries are included without modification. Source code and license
+terms are available at https://github.com/basil00/WinDivert.
