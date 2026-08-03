@@ -142,10 +142,10 @@ function Remove-LegacyIfOwned {
 }
 
 function Remove-WinDivertDriver {
-    $wdf = Get-ServiceRecord 'WinDivert'
+    $wdf = Get-Service -Name 'WinDivert' -ErrorAction SilentlyContinue
     if (-not $wdf) { return }
     try {
-        if ($wdf.State -eq 'Running') {
+        if ($wdf.Status -eq 'Running') {
             & $sc stop WinDivert | Out-Null
             Wait-ServiceState 'WinDivert' 'Stopped' 10
         }
@@ -181,16 +181,24 @@ function Stop-TestEngines {
 
 function Get-ServiceStatus {
     $service = Get-ServiceRecord $serviceName
-    $wdf = Get-ServiceRecord 'WinDivert'
+    $wdf = Get-Service -Name 'WinDivert' -ErrorAction SilentlyContinue
 
     $serviceOk = [bool]($service -and $service.State -eq 'Running')
-    $wdfOk = [bool]($wdf -and $wdf.State -eq 'Running')
+    $wdfOk = [bool]($wdf -and $wdf.Status -eq 'Running')
     $bypassOk = $false
     $bypassDetail = ''
 
+    $manualOk = $false
+    if (-not $serviceOk) {
+        $bundleExeNormalized = $exe.Replace('\', '\\')
+        $manualOk = [bool](@(Get-CimInstance Win32_Process -Filter "Name='winws2.exe'" -ErrorAction SilentlyContinue | Where-Object {
+            $_.ExecutablePath -and $_.ExecutablePath.Replace('\', '\\').StartsWith($bundleExeNormalized, [StringComparison]::OrdinalIgnoreCase)
+        }).Count)
+    }
+
     if (-not (Get-Command curl.exe -ErrorAction SilentlyContinue)) {
         $bypassDetail = 'curl not found'
-    } elseif ($serviceOk) {
+    } elseif ($serviceOk -or $manualOk) {
         try {
             $previousErrorAction = $ErrorActionPreference
             $ErrorActionPreference = 'Continue'
@@ -221,16 +229,20 @@ function Get-ServiceStatus {
     $serviceColor = if ($serviceOk) { 'Green' } elseif ($service) { 'Red' } else { 'Yellow' }
     Write-Host ('  winws2        ' + $serviceLabel) -ForegroundColor $serviceColor
 
-    $wdfLabel = if ($wdf) { $wdf.State } else { 'NOT INSTALLED' }
+    $wdfLabel = if ($wdf) { $wdf.Status } else { 'NOT INSTALLED' }
     $wdfColor = if ($wdfOk) { 'Green' } elseif ($wdf) { 'Red' } else { 'Yellow' }
     Write-Host ('  WinDivert     ' + $wdfLabel) -ForegroundColor $wdfColor
 
-    $bypassLabel = if ($bypassOk) { 'ACTIVE' } else { "INACTIVE ($bypassDetail)" }
+    $bypassLabel = if ($bypassOk) { if ($manualOk -and -not $serviceOk) { 'ACTIVE (manual)' } else { 'ACTIVE' } } else { "INACTIVE ($bypassDetail)" }
     $bypassColor = if ($bypassOk) { 'Green' } else { 'Red' }
     Write-Host ('  Bypass        ' + $bypassLabel) -ForegroundColor $bypassColor
 
     if ($wdfOk -and -not $serviceOk) {
-        Write-Host '  [!] WinDivert is active but winws2 service is stopped.' -ForegroundColor Yellow
+        if ($manualOk) {
+            Write-Host '  [!] Manual winws2.exe is active (not a Windows service).' -ForegroundColor Yellow
+        } else {
+            Write-Host '  [!] WinDivert is active but winws2 service is stopped.' -ForegroundColor Yellow
+        }
     }
 
     if ($service) {

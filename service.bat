@@ -1,5 +1,9 @@
 @echo off
-set "LOCAL_VERSION=1.0.5"
+set "LOCAL_VERSION="
+if exist "%~dp0version.txt" (
+    for /f "usebackq delims=" %%v in ("%~dp0version.txt") do set "LOCAL_VERSION=%%v"
+)
+if not defined LOCAL_VERSION set "LOCAL_VERSION=unknown"
 set "SERVICE_CONTROL=%~dp0tools\service-control.ps1"
 set "POWERSHELL=C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"
 set "COMSPEC_TRUSTED=C:\Windows\System32\cmd.exe"
