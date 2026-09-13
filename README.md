@@ -233,7 +233,7 @@ A copy of winws2 is already running with the same filter
 Включённый бинарник сообщает:
 
 ```text
-github version v1.0.3 (b78b52c4cd7f843da3ff0848a3430afbd401bdf2) lua_compat_ver 6
+github version v1.0.5.1 (a1bca5a85e25ab138e9617a560c262fcf53e969a) lua_compat_ver 6
 ```
 
 Не смешивайте `winws2.exe` и Lua-файлы из разных выпусков. `zapret-lib.lua` проверяет версию API через `NFQWS2_COMPAT_VER`.

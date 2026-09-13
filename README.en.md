@@ -7,7 +7,7 @@
 [![Build verification](https://github.com/klondike0x/zapret2-youtube-discord/actions/workflows/build-verification.yml/badge.svg)](https://github.com/klondike0x/zapret2-youtube-discord/actions/workflows/build-verification.yml)
 [![License](https://img.shields.io/github/license/klondike0x/zapret2-youtube-discord)](LICENSE)
 
-A portable Windows toolkit with ready-to-use BAT profiles powered by the official Zapret2 engine. It uses `winws2.exe v1.0.3` with `lua_compat_ver 6`, not the legacy Zapret1 `winws.exe`.
+A portable Windows toolkit with ready-to-use BAT profiles powered by the official Zapret2 engine. It uses `winws2.exe v1.0.5.1` with `lua_compat_ver 6`, not the legacy Zapret1 `winws.exe`.
 
 [Download the latest release](https://github.com/klondike0x/zapret2-youtube-discord/releases/latest)
 
