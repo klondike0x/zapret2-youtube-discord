@@ -71,7 +71,7 @@ python tools/generate_virustotal_table.py dist/<архив> --version vX.Y.Z
 Portable ZIP собирается из файлов конкретного Git-коммита, а не из произвольного содержимого рабочей папки:
 
 ```bash
-python tools/build_release_zip.py --version v1.0.6 --revision v1.0.6 --output-dir dist
+python tools/build_release_zip.py --version v1.0.7 --revision v1.0.7 --output-dir dist
 python tests/validate_release_zip.py
 ```
 
