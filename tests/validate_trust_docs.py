@@ -36,7 +36,7 @@ def main() -> int:
 
     for token in [
         "README.md",
-        "winws2.exe v1.0.3",
+        "winws2.exe v1.0.5.1",
         "v1.0.3",
         "v1.0.6",
         "4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31AE",
