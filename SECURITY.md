@@ -1,54 +1,54 @@
-# Security policy
+# Политика безопасности
 
-## Supported versions
+## Поддерживаемые версии
 
-Only the latest published release receives security fixes. Older releases should be treated as unsupported once a replacement is available.
+Исправления безопасности получают только последние опубликованные релизы. После выхода новой версии старые релизы считаются неподдерживаемыми.
 
-| Version | Supported |
+| Версия | Поддерживается |
 | --- | --- |
-| Latest release | Yes |
-| Older releases | No |
+| Последний релиз | Да |
+| Старые релизы | Нет |
 
-## Private reporting
+## Конфиденциальное сообщение об уязвимости
 
-Do not publish suspected vulnerabilities, leaked credentials, or proof-of-concept exploits in a public issue.
+Не публикуйте предполагаемые уязвимости, утёкшие учётные данные или рабочие эксплойты в открытых Issues.
 
-Use GitHub's **Report a vulnerability** form on the repository Security page when private vulnerability reporting is available:
+Если доступна конфиденциальная форма GitHub, используйте форму **Report a vulnerability** на странице Security репозитория:
 
 https://github.com/klondike0x/zapret2-youtube-discord/security/advisories/new
 
-Include:
+Укажите:
 
-- the affected version and file;
-- reproduction steps;
-- expected and actual behavior;
-- security impact;
-- relevant logs with tokens and personal information removed.
+- затронутую версию и файл;
+- шаги воспроизведения;
+- ожидаемое и фактическое поведение;
+- последствия для безопасности;
+- относящиеся к проблеме журналы без токенов и персональных данных.
 
-If private reporting is unavailable, open a public issue containing no exploit details and ask the maintainer to establish a private contact channel.
+Если конфиденциальная форма недоступна, создайте открытый Issue без деталей эксплойта и попросите сопровождающего предоставить приватный канал связи.
 
-## Official release identity
+## Подлинность официальных релизов
 
-Official releases are published only at:
+Официальные релизы публикуются только здесь:
 
 https://github.com/klondike0x/zapret2-youtube-discord/releases
 
-The release-signing key fingerprint is:
+Отпечаток ключа подписи релизов:
 
 ```text
 4001 5491 B3A6 3D77 7855 FEC0 8DA8 2B54 BDED 31AE
 ```
 
-Verify the fingerprint through the repository, release notes, and an independent project announcement before trusting a newly downloaded key. A green GitHub `Verified` badge alone does not prove that an unrelated account is the official project.
+Проверяйте отпечаток по репозиторию, заметкам к релизу и независимому объявлению проекта перед тем, как доверять новому скачанному ключу. Зелёная отметка GitHub `Verified` сама по себе не доказывает, что сторонний аккаунт является официальным аккаунтом проекта.
 
-Every release should contain:
+Каждый релиз должен содержать:
 
-- a portable ZIP;
+- переносимый ZIP-архив;
 - `SHA256SUMS.txt`;
 - `SHA256SUMS.txt.asc`;
 - `release-signing-key.asc`.
 
-Verify them with:
+Проверка выполняется командами:
 
 ```bash
 gpg --import release-signing-key.asc
@@ -56,25 +56,25 @@ gpg --verify SHA256SUMS.txt.asc SHA256SUMS.txt
 sha256sum -c SHA256SUMS.txt
 ```
 
-GPG verifies publisher identity and file integrity. It does not prove that code is harmless. VirusTotal is also an additional signal tied to a specific SHA-256, not a guarantee.
+GPG подтверждает личность издателя и целостность файлов, но не доказывает отсутствие вредоносного кода. VirusTotal также является дополнительным сигналом, привязанным к конкретному SHA-256, а не гарантией безопасности.
 
-## Compromised key or account
+## Компрометация ключа или аккаунта
 
-If the signing key or GitHub account is suspected to be compromised, releases signed after the suspected compromise must not be trusted until the maintainer publishes an incident notice through independent established channels.
+Если есть подозрение на компрометацию ключа подписи или аккаунта GitHub, релизам, подписанным после предполагаемого момента компрометации, нельзя доверять до публикации сопровождающим уведомления об инциденте через независимые устоявшиеся каналы.
 
-The response will include, as applicable:
+В зависимости от ситуации ответ может включать:
 
-1. pausing new releases;
-2. revoking the compromised key;
-3. publishing the revocation certificate and affected version range;
-4. creating a new signing key;
-5. publishing the new fingerprint through multiple independent channels;
-6. rebuilding and re-signing affected releases under new version numbers.
+1. приостановку новых релизов;
+2. отзыв скомпрометированного ключа;
+3. публикацию сертификата отзыва и диапазона затронутых версий;
+4. создание нового ключа подписи;
+5. публикацию нового отпечатка через несколько независимых каналов;
+6. пересборку и повторную подпись затронутых релизов под новыми номерами версий.
 
-A release asset will never be silently replaced while retaining an old checksum or signature.
+Файл релиза не заменяется незаметно с сохранением старого хэша или подписи.
 
-## Scope
+## Область действия
 
-Reports about credential exposure, unsafe update or release behavior, command injection, privilege escalation, untrusted profile execution, or malicious release substitution are in scope.
+К сообщениям безопасности относятся утечки учётных данных, небезопасное обновление или поведение релиза, внедрение команд, повышение привилегий, выполнение недоверенных профилей и подмена вредоносным файлом.
 
-A DPI strategy failing for a particular ISP is normally a compatibility issue rather than a security vulnerability. WinDivert RiskTool/PUA detections should include the exact SHA-256 and detection names so they can be investigated.
+Если DPI-стратегия не работает у конкретного провайдера, это обычно проблема совместимости, а не уязвимость безопасности. При обнаружениях WinDivert как `RiskTool`/`PUA` указывайте точный SHA-256 и названия обнаружений, чтобы их можно было проверить.

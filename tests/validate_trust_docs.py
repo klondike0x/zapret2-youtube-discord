@@ -48,10 +48,10 @@ def main() -> int:
         require(english, token, "README.en.md")
 
     for token in [
-        "Supported versions",
-        "Private reporting",
-        "fingerprint",
-        "compromised",
+        "Поддерживаемые версии",
+        "Конфиденциальное сообщение об уязвимости",
+        "отпечаток",
+        "Компрометация",
     ]:
         require(security, token, "SECURITY.md")
 
