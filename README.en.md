@@ -81,7 +81,7 @@ The `v1.0.0` asset was mistakenly packaged as TAR under a `.zip` extension. The 
 The release ZIP builder exports tracked files from a Git revision and writes a deterministic ZIP layout:
 
 ```bash
-python tools/build_release_zip.py --version v1.0.6 --revision v1.0.6 --output-dir dist
+python tools/build_release_zip.py --version v1.0.7 --revision v1.0.7 --output-dir dist
 python tests/validate_release_zip.py
 ```
 
