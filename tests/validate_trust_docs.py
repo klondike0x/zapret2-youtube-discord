@@ -25,8 +25,8 @@ def main() -> int:
         "actions/workflows/build-verification.yml/badge.svg",
         "github/v/release/klondike0x/zapret2-youtube-discord",
         "github/downloads/klondike0x/zapret2-youtube-discord/total",
-        "c2547c349dc60be8b99e3d5835037ef1d60b4b48b497e7e891f07f7567afdb23",
-        "v1.0.6",
+        "9413c972a69741c7fb528c320296e580beabf167401d455f03ae6cb6ddf3383b",
+        "v1.0.7",
         "goshkow.com/zapret-hub/marketplace/projects/https_github_com_klondike0x_zapret2_youtube_discor",
         "Zapret Hub Marketplace",
     ]:
